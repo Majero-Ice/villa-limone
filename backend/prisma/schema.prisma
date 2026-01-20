@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===================
+// KNOWLEDGE BASE
+// ===================
+
+model Document {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // "pdf", "txt", "md", "crawl"
+  sourceUrl   String?
+  content     String   @db.Text
+  contentHash String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  chunks      Chunk[]
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  @@index([documentId])
+}
+
+// ===================
+// HOTEL
+// ===================
+
+model Room {
+  id            String             @id @default(uuid())
+  slug          String             @unique
+  name          String
+  description   String             @db.Text
+  capacity      Int
+  pricePerNight Int                // cents
+  imageUrl      String
+  features      String[]
+  isActive      Boolean            @default(true)
+  sortOrder     Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  reservations  Reservation[]
+  availability  RoomAvailability[]
+
+  @@index([isActive, sortOrder])
+}
+
+model RoomAvailability {
+  id        String   @id @default(uuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  isBlocked Boolean  @default(false)
+  @@unique([roomId, date])
+  @@index([roomId])
+  @@index([date])
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  roomId          String
+  room            Room              @relation(fields: [roomId], references: [id])
+  guestName       String
+  guestEmail      String
+  checkIn         DateTime          @db.Date
+  checkOut        DateTime          @db.Date
+  guestsCount     Int
+  totalPrice      Int               // cents
+  status          ReservationStatus @default(PENDING)
+  specialRequests String?           @db.Text
+  conversationId  String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@index([roomId])
+  @@index([guestEmail])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  guestName String
+  content   String   @db.Text
+  rating    Int
+  date      DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([isActive])
+  @@index([date])
+}
+
+model Amenity {
+  id          String  @id @default(uuid())
+  name        String
+  description String? @db.Text
+  icon        String
+  category    String  // "general", "wellness", "dining", "services"
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  @@index([category, isActive])
+  @@index([sortOrder])
+}
+
+// ===================
+// CHAT
+// ===================
+
+model Conversation {
+  id             String    @id @default(uuid())
+  sessionId      String
+  hasReservation Boolean   @default(false)
+  messageCount   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  messages       Message[]
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String       @db.Text
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ===================
+// ADMIN & SETTINGS
+// ===================
+
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model BotSettings {
+  id                    String   @id @default("default")
+  systemPrompt          String   @db.Text
+  enableBooking         Boolean  @default(true)
+  enableRecommendations Boolean  @default(true)
+  enableAvailability    Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}
+
+model QuickReply {
+  id        String   @id @default(uuid())
+  trigger   String
+  response  String   @db.Text
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([isActive, sortOrder])
+}
+
+model CrawlLog {
+  id               String      @id @default(uuid())
+  status           CrawlStatus
+  sourceUrl        String
+  documentsUpdated Int         @default(0)
+  chunksCreated    Int         @default(0)
+  error            String?     @db.Text
+  startedAt        DateTime    @default(now())
+  completedAt      DateTime?
+
+  @@index([status])
+  @@index([startedAt])
+}
+
+enum CrawlStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model CrawlSchedule {
+  id        String    @id @default("default")
+  enabled   Boolean   @default(false)
+  frequency String    @default("daily")
+  lastRun   DateTime?
+  nextRun   DateTime?
+  sourceUrl String
+  updatedAt DateTime  @updatedAt
+}
