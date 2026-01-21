@@ -11,6 +11,7 @@ Landing page for a boutique Italian hotel (Ligurian coast) with AI concierge cha
 ## Tech Stack
 
 ### Frontend
+
 - Next.js 14+ (App Router)
 - TypeScript (strict)
 - Tailwind CSS + shadcn/ui
@@ -20,6 +21,7 @@ Landing page for a boutique Italian hotel (Ligurian coast) with AI concierge cha
 - Deploy: Vercel
 
 ### Backend
+
 - NestJS
 - TypeScript
 - Prisma ORM
@@ -88,9 +90,11 @@ fontFamily: {
 ## Frontend Architecture — Feature-Sliced Design
 
 ### Layer Hierarchy
+
 ```
 app → widgets → features → entities → shared
 ```
+
 Dependencies point downward only. Never import from upper layers.
 
 ### Structure
@@ -160,6 +164,7 @@ src/
 ```
 
 ### Slice Structure
+
 ```
 entities/room/
 ├── ui/
@@ -175,6 +180,7 @@ entities/room/
 ### Frontend Patterns
 
 **API Client:**
+
 ```typescript
 // shared/lib/api.ts
 import axios from 'axios';
@@ -190,6 +196,7 @@ export const roomApi = {
 ```
 
 **Zustand Store:**
+
 ```typescript
 // widgets/chat-widget/model/chat.store.ts
 import { create } from 'zustand';
@@ -214,6 +221,7 @@ export const useChatStore = create<ChatState>((set) => ({
 ```
 
 **Component:**
+
 ```typescript
 // entities/room/ui/RoomCard.tsx
 interface RoomCardProps {
@@ -238,9 +246,11 @@ export function RoomCard({ room, onSelect }: RoomCardProps) {
 ## Backend Architecture — DDD + Clean Architecture
 
 ### Layer Hierarchy
+
 ```
 Presentation → Application → Domain ← Infrastructure
 ```
+
 Domain has NO external dependencies. Infrastructure implements domain interfaces.
 
 ### Structure
@@ -322,6 +332,7 @@ src/
 ### Backend Patterns
 
 **Entity (Domain):**
+
 ```typescript
 // domain/entities/room.entity.ts
 import { Price } from '../value-objects/price.vo';
@@ -359,6 +370,7 @@ export class Room {
 ```
 
 **Value Object:**
+
 ```typescript
 // domain/value-objects/price.vo.ts
 export class Price {
@@ -379,6 +391,7 @@ export class Price {
 ```
 
 **Repository Interface (Domain):**
+
 ```typescript
 // domain/repositories/room.repository.interface.ts
 import { Room } from '../entities/room.entity';
@@ -393,6 +406,7 @@ export const ROOM_REPOSITORY = Symbol('IRoomRepository');
 ```
 
 **Repository Implementation (Infrastructure):**
+
 ```typescript
 // infrastructure/persistence/room.prisma-repository.ts
 @Injectable()
@@ -410,6 +424,7 @@ export class RoomPrismaRepository implements IRoomRepository {
 ```
 
 **Use Case (Application):**
+
 ```typescript
 // application/use-cases/get-all-rooms.use-case.ts
 @Injectable()
@@ -427,6 +442,7 @@ export class GetAllRoomsUseCase {
 ```
 
 **Controller (Presentation):**
+
 ```typescript
 // presentation/room.controller.ts
 @Controller('api/rooms')
@@ -455,6 +471,7 @@ export class RoomController {
 ```
 
 **Module (Infrastructure):**
+
 ```typescript
 // infrastructure/room.module.ts
 @Module({
@@ -678,47 +695,50 @@ model CrawlSchedule {
 
 ### Public
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/rooms` | All active rooms |
-| GET | `/api/rooms/:slug` | Single room |
-| POST | `/api/rooms/availability` | Check availability |
-| GET | `/api/amenities` | All amenities |
-| GET | `/api/testimonials` | Active testimonials |
-| POST | `/api/chat/message` | Send message → AI response |
-| POST | `/api/reservations` | Create reservation |
+
+| Method | Route                     | Description                 |
+| -------- | --------------------------- | ----------------------------- |
+| GET    | `/api/rooms`              | All active rooms            |
+| GET    | `/api/rooms/:slug`        | Single room                 |
+| POST   | `/api/rooms/availability` | Check availability          |
+| GET    | `/api/amenities`          | All amenities               |
+| GET    | `/api/testimonials`       | Active testimonials         |
+| POST   | `/api/chat/message`       | Send message → AI response |
+| POST   | `/api/reservations`       | Create reservation          |
 
 ### Admin (JWT Protected)
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/admin/auth/login` | Login → JWT |
-| GET | `/api/admin/auth/me` | Current admin |
-| GET | `/api/admin/dashboard/stats` | Dashboard stats |
-| GET | `/api/admin/reservations` | List (filterable) |
-| GET | `/api/admin/reservations/:id` | Detail |
-| PATCH | `/api/admin/reservations/:id` | Update status |
-| DELETE | `/api/admin/reservations/:id` | Delete |
-| GET | `/api/admin/documents` | List documents |
-| POST | `/api/admin/documents` | Upload document |
-| DELETE | `/api/admin/documents/:id` | Delete document |
-| POST | `/api/admin/crawl` | Trigger crawl |
-| GET | `/api/admin/crawl/schedule` | Get schedule |
-| PATCH | `/api/admin/crawl/schedule` | Update schedule |
-| GET | `/api/admin/conversations` | List conversations |
-| GET | `/api/admin/conversations/:id` | Conversation detail |
-| GET | `/api/admin/settings` | Bot settings |
-| PATCH | `/api/admin/settings` | Update settings |
-| GET | `/api/admin/quick-replies` | List |
-| POST | `/api/admin/quick-replies` | Create |
-| PATCH | `/api/admin/quick-replies/:id` | Update |
-| DELETE | `/api/admin/quick-replies/:id` | Delete |
+
+| Method | Route                          | Description         |
+| -------- | -------------------------------- | --------------------- |
+| POST   | `/api/admin/auth/login`        | Login → JWT        |
+| GET    | `/api/admin/auth/me`           | Current admin       |
+| GET    | `/api/admin/dashboard/stats`   | Dashboard stats     |
+| GET    | `/api/admin/reservations`      | List (filterable)   |
+| GET    | `/api/admin/reservations/:id`  | Detail              |
+| PATCH  | `/api/admin/reservations/:id`  | Update status       |
+| DELETE | `/api/admin/reservations/:id`  | Delete              |
+| GET    | `/api/admin/documents`         | List documents      |
+| POST   | `/api/admin/documents`         | Upload document     |
+| DELETE | `/api/admin/documents/:id`     | Delete document     |
+| POST   | `/api/admin/crawl`             | Trigger crawl       |
+| GET    | `/api/admin/crawl/schedule`    | Get schedule        |
+| PATCH  | `/api/admin/crawl/schedule`    | Update schedule     |
+| GET    | `/api/admin/conversations`     | List conversations  |
+| GET    | `/api/admin/conversations/:id` | Conversation detail |
+| GET    | `/api/admin/settings`          | Bot settings        |
+| PATCH  | `/api/admin/settings`          | Update settings     |
+| GET    | `/api/admin/quick-replies`     | List                |
+| POST   | `/api/admin/quick-replies`     | Create              |
+| PATCH  | `/api/admin/quick-replies/:id` | Update              |
+| DELETE | `/api/admin/quick-replies/:id` | Delete              |
 
 ---
 
 ## User Stories
 
 ### Visitor (Landing)
+
 1. See hero with hotel imagery
 2. Read about hotel story
 3. Browse rooms with photos, prices
@@ -728,6 +748,7 @@ model CrawlSchedule {
 7. Find contact info
 
 ### Visitor (Chatbot)
+
 8. Open chat via floating button
 9. Ask questions → AI answers
 10. Check room availability
@@ -736,17 +757,20 @@ model CrawlSchedule {
 13. Session persistence
 
 ### Admin — Dashboard
+
 14. Login to admin panel
 15. See stats: reservations, revenue
 16. See recent activity
 
 ### Admin — Reservations
+
 17. View all reservations (filterable)
 18. View details
 19. Confirm / cancel
 20. Delete
 
 ### Admin — Knowledge Base
+
 21. View documents list
 22. Upload new (PDF, TXT, MD)
 23. Delete documents
@@ -754,6 +778,7 @@ model CrawlSchedule {
 25. Configure auto-crawl schedule
 
 ### Admin — Chats & Settings
+
 26. View conversations
 27. View message history
 28. Edit system prompt
@@ -766,12 +791,13 @@ model CrawlSchedule {
 
 ### Rooms
 
-| Name | Slug | Capacity | €/Night | Features |
-|------|------|----------|---------|----------|
-| Camera Mare | camera-mare | 2 | 180 | Sea view, Balcony, King bed, AC, Mini bar |
-| Camera Limone | camera-limone | 2 | 150 | Garden view, Queen bed, Terrace, AC |
-| Suite Portofino | suite-portofino | 4 | 280 | Panoramic view, Living area, 2BR, Jacuzzi |
-| Camera Giardino | camera-giardino | 2 | 130 | Courtyard view, Queen bed, Quiet, Desk |
+
+| Name            | Slug            | Capacity | €/Night | Features                                  |
+| ----------------- | ----------------- | ---------- | ---------- | ------------------------------------------- |
+| Camera Mare     | camera-mare     | 2        | 180      | Sea view, Balcony, King bed, AC, Mini bar |
+| Camera Limone   | camera-limone   | 2        | 150      | Garden view, Queen bed, Terrace, AC       |
+| Suite Portofino | suite-portofino | 4        | 280      | Panoramic view, Living area, 2BR, Jacuzzi |
+| Camera Giardino | camera-giardino | 2        | 130      | Courtyard view, Queen bed, Quiet, Desk    |
 
 ### Amenities
 
@@ -815,61 +841,67 @@ If unsure, offer to have front desk follow up.
 ## Development Phases
 
 ### Phase 0: Setup (2h)
-- [ ] Create monorepo structure (frontend/ + backend/)
-- [ ] Frontend: Next.js + TypeScript + Tailwind + shadcn/ui
-- [ ] Setup tailwind.config.ts with design system colors
-- [ ] Setup globals.css with CSS variables
-- [ ] Backend: NestJS + TypeScript + Prisma
-- [ ] Configure Prisma with Supabase
-- [ ] Run migrations
-- [ ] Create seed data (rooms, amenities, testimonials, admin)
-- [ ] Setup environment variables both sides
-- [ ] Test connection frontend → backend
+
+- [X] Create monorepo structure (frontend/ + backend/)
+- [X] Frontend: Next.js + TypeScript + Tailwind + shadcn/ui
+- [X] Setup tailwind.config.ts with design system colors
+- [X] Setup globals.css with CSS variables
+- [X] Backend: NestJS + TypeScript + Prisma
+- [X] Configure Prisma with Supabase
+- [X] Run migrations
+- [X] Create seed data (rooms, amenities, testimonials, admin)
+- [X] Setup environment variables both sides
+- [X] Test connection frontend → backend
 
 ### Phase 1: Landing Page — Static (3-4h)
-- [ ] Setup fonts (Playfair Display, Inter)
-- [ ] Create layout (Header, Footer)
-- [ ] Build HeroSection (full viewport, image, CTAs)
-- [ ] Build AboutSection (two columns)
-- [ ] Build RoomsSection with RoomCard (mock data)
-- [ ] Build AmenitiesSection (icon grid)
-- [ ] Build LocationSection (map + text)
-- [ ] Build TestimonialsSection
-- [ ] Smooth scroll navigation
-- [ ] Mobile responsive
+
+- [X] Setup fonts (Playfair Display, Inter)
+- [X] Create layout (Header, Footer)
+- [X] Build HeroSection (full viewport, image, CTAs)
+- [X] Build AboutSection (two columns)
+- [X] Build RoomsSection with RoomCard (mock data)
+- [X] Build AmenitiesSection (icon grid)
+- [X] Build LocationSection (map + text)
+- [X] Build TestimonialsSection
+- [X] Smooth scroll navigation
+- [X] Mobile responsive
 
 ### Phase 2: Landing Page — Dynamic (2h)
-- [ ] Backend: GET /api/rooms endpoint (use case, repo, controller)
-- [ ] Backend: GET /api/amenities endpoint
-- [ ] Backend: GET /api/testimonials endpoint
-- [ ] Frontend: Create API functions in entities
-- [ ] Connect RoomsSection to real data
-- [ ] Connect AmenitiesSection to real data
-- [ ] Connect TestimonialsSection to real data
-- [ ] Add loading skeletons
+
+- [X] Backend: GET /api/rooms endpoint (use case, repo, controller)
+- [X] Backend: GET /api/amenities endpoint
+- [X] Backend: GET /api/testimonials endpoint
+- [X] Frontend: Create API functions in entities
+- [X] Connect RoomsSection to real data
+- [X] Connect AmenitiesSection to real data
+- [X] Connect TestimonialsSection to real data
+- [X] Add loading skeletons
 
 ### Phase 3: Chat UI (2-3h)
-- [ ] Build ChatWidget (floating button, terracotta)
-- [ ] Build ChatWindow (400px, expandable)
-- [ ] Build ChatMessage (user right, assistant left)
-- [ ] Build ChatInput (input + send button)
-- [ ] Create chat.store.ts (Zustand)
-- [ ] Open/close animation
-- [ ] Typing indicator
-- [ ] Session ID generation + persistence
-- [ ] Mobile responsive chat
+
+- [X] Build ChatWidget (floating button, terracotta)
+- [X] Build ChatWindow (400px, expandable)
+- [X] Build ChatMessage (user right, assistant left)
+- [X] Build ChatInput (input + send button)
+- [X] Create chat.store.ts (Zustand)
+- [X] Open/close animation
+- [X] Typing indicator
+- [X] Session ID generation + persistence
+- [X] Mobile responsive chat
 
 ### Phase 4: AI Integration (2-3h)
-- [ ] Prepare knowledge base content (markdown files)
-- [ ] Backend: Document/Chunk models already exist
-- [ ] Import hotel info → chunks → embeddings
-- [ ] Backend: POST /api/chat/message endpoint
-- [ ] Implement RAG: query → embeddings → similar chunks → GPT
-- [ ] Connect chat UI to backend
-- [ ] Test Q&A (hotel info, room details)
-- [ ] Fine-tune system prompt
+
+- [X] Prepare knowledge base content (markdown files)
+- [X] Backend: Document/Chunk models already exist
+- [X] Import hotel info → chunks → embeddings
+- [X] Backend: POST /api/chat/message endpoint
+- [X] Implement RAG: query → embeddings → similar chunks → GPT
+- [X] Connect chat UI to backend
+- [X] Test Q&A (hotel info, room details)
+- [X] Fine-tune system prompt
 
 ### Phase 5: Availability & Booking (3h)
+
 - [ ] Backend: POST /api/rooms/availability (check dates)
 - [ ] Backend: POST /api/reservations (create)
 - [ ] Add intent detection to chat (availability, booking)
@@ -880,6 +912,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Test full flow: ask → check → book
 
 ### Phase 6: Admin — Auth & Layout (2h)
+
 - [ ] Backend: Admin model + seed default admin
 - [ ] Backend: POST /api/admin/auth/login (JWT)
 - [ ] Backend: GET /api/admin/auth/me
@@ -892,6 +925,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Route protection (redirect if not logged in)
 
 ### Phase 7: Admin — Dashboard & Reservations (3h)
+
 - [ ] Backend: GET /api/admin/dashboard/stats
 - [ ] Frontend: StatsCards component
 - [ ] Frontend: Dashboard page
@@ -906,6 +940,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Delete with confirmation modal
 
 ### Phase 8: Admin — Knowledge Base (3h)
+
 - [ ] Backend: GET /api/admin/documents
 - [ ] Backend: POST /api/admin/documents (upload + parse + chunk + embed)
 - [ ] Backend: DELETE /api/admin/documents/:id
@@ -919,6 +954,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Frontend: Schedule settings
 
 ### Phase 9: Admin — Chats & Settings (2h)
+
 - [ ] Backend: GET /api/admin/conversations (paginated)
 - [ ] Backend: GET /api/admin/conversations/:id (with messages)
 - [ ] Backend: GET/PATCH /api/admin/settings
@@ -930,6 +966,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Frontend: Quick replies management
 
 ### Phase 10: Polish & Deploy (2-3h)
+
 - [ ] Add loading states everywhere
 - [ ] Add error handling (toasts, error states)
 - [ ] Final responsive testing
@@ -946,12 +983,14 @@ If unsure, offer to have front desk follow up.
 ## Acceptance Criteria
 
 ### Landing
+
 - [ ] All sections render correctly
 - [ ] Mobile responsive
 - [ ] Smooth scroll works
 - [ ] Chat widget visible from any position
 
 ### Chatbot
+
 - [ ] Opens/closes smoothly
 - [ ] AI answers hotel questions correctly
 - [ ] Availability check works
@@ -959,6 +998,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Session persists on page refresh
 
 ### Admin
+
 - [ ] Login works
 - [ ] Dashboard stats accurate
 - [ ] Reservations CRUD works
@@ -968,6 +1008,7 @@ If unsure, offer to have front desk follow up.
 - [ ] Settings changes apply
 
 ### Technical
+
 - [ ] Lighthouse >80
 - [ ] No console errors
 - [ ] Errors handled gracefully
@@ -977,11 +1018,13 @@ If unsure, offer to have front desk follow up.
 ## Environment Variables
 
 ### Frontend (.env.local)
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 ### Backend (.env)
+
 ```
 DATABASE_URL=postgresql://...
 DIRECT_URL=postgresql://...
@@ -996,6 +1039,7 @@ CORS_ORIGIN=http://localhost:3000
 ## File Naming Conventions
 
 ### Frontend
+
 - Components: `PascalCase.tsx`
 - Hooks: `use-*.ts`
 - Stores: `*.store.ts`
@@ -1003,6 +1047,7 @@ CORS_ORIGIN=http://localhost:3000
 - Types: `types.ts`
 
 ### Backend
+
 - Entities: `*.entity.ts`
 - Value Objects: `*.vo.ts`
 - Repositories: `*.repository.interface.ts` / `*.prisma-repository.ts`
@@ -1016,12 +1061,14 @@ CORS_ORIGIN=http://localhost:3000
 ## Don'ts
 
 ### Frontend
+
 - Don't put logic in app/ pages — use widgets/features
 - Don't import upper FSD layers
 - Don't hardcode colors — use Tailwind config
 - Don't skip loading states
 
 ### Backend
+
 - Don't import Prisma in domain layer
 - Don't put business logic in controllers
 - Don't skip use case layer

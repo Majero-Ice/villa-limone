@@ -158,6 +158,14 @@ h4 {
   }
 }
 
+.card-base {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-soft);
+  transition-property: box-shadow;
+  transition-duration: 300ms;
+}
+
 .card-elevated {
   background-color: var(--color-sand);
   border-radius: 0.75rem;

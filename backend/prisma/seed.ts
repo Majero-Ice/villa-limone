@@ -54,7 +54,7 @@ async function main() {
       description: 'Beautiful sea view room with balcony overlooking the Ligurian coast. Features a king-size bed, air conditioning, and mini bar.',
       capacity: 2,
       pricePerNight: 18000, // €180 in cents
-      imageUrl: '/images/rooms/camera-mare.jpg',
+      imageUrl: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=2080',
       features: ['Sea view', 'Balcony', 'King bed', 'AC', 'Mini bar'],
       sortOrder: 1,
     },
@@ -64,7 +64,7 @@ async function main() {
       description: 'Charming room with garden view and private terrace. Perfect for a romantic getaway.',
       capacity: 2,
       pricePerNight: 15000, // €150 in cents
-      imageUrl: '/images/rooms/camera-limone.jpg',
+      imageUrl: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2080',
       features: ['Garden view', 'Queen bed', 'Terrace', 'AC'],
       sortOrder: 2,
     },
@@ -74,7 +74,7 @@ async function main() {
       description: 'Spacious suite with panoramic views, living area, two bedrooms, and luxurious jacuzzi.',
       capacity: 4,
       pricePerNight: 28000, // €280 in cents
-      imageUrl: '/images/rooms/suite-portofino.jpg',
+      imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2080',
       features: ['Panoramic view', 'Living area', '2BR', 'Jacuzzi'],
       sortOrder: 3,
     },
@@ -84,7 +84,7 @@ async function main() {
       description: 'Quiet courtyard-facing room ideal for work or relaxation. Features a queen bed and dedicated workspace.',
       capacity: 2,
       pricePerNight: 13000, // €130 in cents
-      imageUrl: '/images/rooms/camera-giardino.jpg',
+      imageUrl: 'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?q=80&w=2080',
       features: ['Courtyard view', 'Queen bed', 'Quiet', 'Desk'],
       sortOrder: 4,
     },

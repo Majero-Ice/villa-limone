@@ -1,37 +1,49 @@
-import { TestimonialCard, Testimonial } from '@/entities/testimonial';
+'use client';
 
-const MOCK_TESTIMONIALS: Testimonial[] = [
-  {
-    id: '1',
-    guestName: 'Maria S.',
-    content: 'The most beautiful views of the Ligurian coast. Every morning we woke up to the sound of waves and the smell of lemon blossoms. Villa Limone is a true hidden gem.',
-    rating: 5,
-    date: '2024-06-15',
-  },
-  {
-    id: '2',
-    guestName: 'James & Linda',
-    content: 'The staff made us feel like part of their family. The personalized recommendations for local restaurants and hidden beaches made our trip unforgettable.',
-    rating: 5,
-    date: '2024-05-20',
-  },
-  {
-    id: '3',
-    guestName: 'Thomas K.',
-    content: 'Perfect location for exploring Cinque Terre and Portofino. The hotel itself is charming and authentic, with attention to every detail.',
-    rating: 4,
-    date: '2024-07-10',
-  },
-  {
-    id: '4',
-    guestName: 'Sophie M.',
-    content: 'The homemade breakfast was incredible. Fresh pastries, local fruits, and the best cappuccino I have ever had. Cannot wait to return!',
-    rating: 5,
-    date: '2024-08-05',
-  },
-];
+import { useEffect, useState } from 'react';
+import { TestimonialCard, Testimonial, testimonialApi } from '@/entities/testimonial';
+
+function TestimonialCardSkeleton() {
+  return (
+    <div className="card-base p-6 animate-pulse">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 bg-soft-beige rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="h-5 bg-soft-beige rounded w-1/3" />
+          <div className="h-4 bg-soft-beige rounded w-1/4" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-soft-beige rounded w-full" />
+        <div className="h-4 bg-soft-beige rounded w-5/6" />
+        <div className="h-4 bg-soft-beige rounded w-4/6" />
+      </div>
+    </div>
+  );
+}
 
 export function TestimonialsSection() {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        setIsLoading(true);
+        const data = await testimonialApi.getAll();
+        setTestimonials(data);
+      } catch (err) {
+        setError('Failed to load testimonials. Please try again later.');
+        console.error('Error fetching testimonials:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
+
   return (
     <section id="testimonials" className="section bg-sand">
       <div className="container-wide">
@@ -42,10 +54,20 @@ export function TestimonialsSection() {
           </p>
         </div>
 
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-danger">{error}</p>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {MOCK_TESTIMONIALS.map((testimonial) => (
-            <TestimonialCard key={testimonial.id} testimonial={testimonial} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <TestimonialCardSkeleton key={index} />
+              ))
+            : testimonials.map((testimonial) => (
+                <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+              ))}
         </div>
       </div>
     </section>

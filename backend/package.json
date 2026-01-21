@@ -18,7 +18,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "seed:knowledge": "ts-node -r tsconfig-paths/register src/scripts/seed-knowledge-base.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,11 +37,13 @@
     "@nestjs/platform-express": "^11.1.12",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@supabase/supabase-js": "^2.91.0",
     "@types/pg": "^8.16.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "dotenv": "^17.2.3",
+    "openai": "^6.16.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.17.1",

@@ -16,7 +16,7 @@ datasource db {
 model Document {
   id          String   @id @default(uuid())
   name        String
-  type        String   // "pdf", "txt", "md", "crawl"
+  type        String // "pdf", "txt", "md", "crawl"
   sourceUrl   String?
   content     String   @db.Text
   contentHash String?
@@ -29,13 +29,14 @@ model Document {
 }
 
 model Chunk {
-  id         String   @id @default(uuid())
+  id         String                       @id @default(uuid())
   documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  content    String   @db.Text
+  document   Document                     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String                       @db.Text
   embedding  Unsupported("vector(1536)")?
   metadata   Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime                     @default(now())
+
   @@index([documentId])
 }
 
@@ -49,7 +50,7 @@ model Room {
   name          String
   description   String             @db.Text
   capacity      Int
-  pricePerNight Int                // cents
+  pricePerNight Int // cents
   imageUrl      String
   features      String[]
   isActive      Boolean            @default(true)
@@ -68,6 +69,7 @@ model RoomAvailability {
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   isBlocked Boolean  @default(false)
+
   @@unique([roomId, date])
   @@index([roomId])
   @@index([date])
@@ -82,12 +84,13 @@ model Reservation {
   checkIn         DateTime          @db.Date
   checkOut        DateTime          @db.Date
   guestsCount     Int
-  totalPrice      Int               // cents
+  totalPrice      Int // cents
   status          ReservationStatus @default(PENDING)
   specialRequests String?           @db.Text
   conversationId  String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
   @@index([roomId])
   @@index([guestEmail])
   @@index([status])
@@ -118,7 +121,7 @@ model Amenity {
   name        String
   description String? @db.Text
   icon        String
-  category    String  // "general", "wellness", "dining", "services"
+  category    String // "general", "wellness", "dining", "services"
   sortOrder   Int     @default(0)
   isActive    Boolean @default(true)
 
@@ -135,9 +138,11 @@ model Conversation {
   sessionId      String
   hasReservation Boolean   @default(false)
   messageCount   Int       @default(0)
+  metadata       Json?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   messages       Message[]
+
   @@index([sessionId])
   @@index([createdAt])
 }
@@ -150,6 +155,7 @@ model Message {
   content        String       @db.Text
   metadata       Json?
   createdAt      DateTime     @default(now())
+
   @@index([conversationId])
   @@index([createdAt])
 }

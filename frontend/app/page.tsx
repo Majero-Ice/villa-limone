@@ -6,6 +6,7 @@ import { RoomsSection } from '@/widgets/rooms-section';
 import { AmenitiesSection } from '@/widgets/amenities-section';
 import { LocationSection } from '@/widgets/location-section';
 import { TestimonialsSection } from '@/widgets/testimonials-section';
+import { ChatWidget } from '@/widgets/chat-widget';
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
         <TestimonialsSection />
       </main>
       <Footer />
+      <ChatWidget />
     </>
   );
 }
