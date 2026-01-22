@@ -902,68 +902,68 @@ If unsure, offer to have front desk follow up.
 
 ### Phase 5: Availability & Booking (3h)
 
-- [ ] Backend: POST /api/rooms/availability (check dates)
-- [ ] Backend: POST /api/reservations (create)
-- [ ] Add intent detection to chat (availability, booking)
-- [ ] Implement availability check in conversation
-- [ ] Implement booking flow (collect name, email, dates, room)
-- [ ] Create reservation record linked to conversation
-- [ ] Update conversation.hasReservation flag
-- [ ] Test full flow: ask → check → book
+- [X] Backend: POST /api/rooms/availability (check dates)
+- [X] Backend: POST /api/reservations (create)
+- [X] Add intent detection to chat (availability, booking)
+- [X] Implement availability check in conversation
+- [X] Implement booking flow (collect name, email, dates, room)
+- [X] Create reservation record linked to conversation
+- [X] Update conversation.hasReservation flag
+- [X] Test full flow: ask → check → book
 
 ### Phase 6: Admin — Auth & Layout (2h)
 
-- [ ] Backend: Admin model + seed default admin
-- [ ] Backend: POST /api/admin/auth/login (JWT)
-- [ ] Backend: GET /api/admin/auth/me
-- [ ] Backend: JwtAuthGuard for admin routes
-- [ ] Frontend: AdminSidebar (dark theme)
-- [ ] Frontend: AdminHeader
-- [ ] Frontend: Admin layout.tsx
-- [ ] Frontend: Login page + form
-- [ ] Frontend: auth.store.ts (token management)
-- [ ] Route protection (redirect if not logged in)
+- [X] Backend: Admin model + seed default admin
+- [X] Backend: POST /api/admin/auth/login (JWT)
+- [X] Backend: GET /api/admin/auth/me
+- [X] Backend: JwtAuthGuard for admin routes
+- [X] Frontend: AdminSidebar (dark theme)
+- [X] Frontend: AdminHeader
+- [X] Frontend: Admin layout.tsx
+- [X] Frontend: Login page + form
+- [X] Frontend: auth.store.ts (token management)
+- [X] Route protection (redirect if not logged in)
 
 ### Phase 7: Admin — Dashboard & Reservations (3h)
 
-- [ ] Backend: GET /api/admin/dashboard/stats
-- [ ] Frontend: StatsCards component
-- [ ] Frontend: Dashboard page
-- [ ] Backend: GET /api/admin/reservations (filters, pagination)
-- [ ] Backend: GET /api/admin/reservations/:id
-- [ ] Backend: PATCH /api/admin/reservations/:id (status)
-- [ ] Backend: DELETE /api/admin/reservations/:id
-- [ ] Frontend: ReservationsTable + StatusBadge
-- [ ] Frontend: Reservations list page
-- [ ] Frontend: Reservation detail page
-- [ ] Confirm/cancel actions
-- [ ] Delete with confirmation modal
+- [X] Backend: GET /api/admin/dashboard/stats
+- [X] Frontend: StatsCards component
+- [X] Frontend: Dashboard page
+- [X] Backend: GET /api/admin/reservations (filters, pagination)
+- [X] Backend: GET /api/admin/reservations/:id
+- [X] Backend: PATCH /api/admin/reservations/:id (status)
+- [X] Backend: DELETE /api/admin/reservations/:id
+- [X] Frontend: ReservationsTable + StatusBadge
+- [X] Frontend: Reservations list page
+- [X] Frontend: Reservation detail page
+- [X] Confirm/cancel actions
+- [X] Delete with confirmation modal
 
 ### Phase 8: Admin — Knowledge Base (3h)
 
-- [ ] Backend: GET /api/admin/documents
-- [ ] Backend: POST /api/admin/documents (upload + parse + chunk + embed)
-- [ ] Backend: DELETE /api/admin/documents/:id
-- [ ] Backend: POST /api/admin/crawl (manual trigger)
-- [ ] Backend: GET/PATCH /api/admin/crawl/schedule
-- [ ] Backend: node-cron job for auto-crawl
-- [ ] Frontend: DocumentsTable
-- [ ] Frontend: Upload form (file picker)
-- [ ] Frontend: Knowledge page
-- [ ] Frontend: Crawl button + status display
-- [ ] Frontend: Schedule settings
+- [X] Backend: GET /api/admin/documents
+- [X] Backend: POST /api/admin/documents (upload + parse + chunk + embed)
+- [X] Backend: DELETE /api/admin/documents/:id
+- [X] Backend: POST /api/admin/crawl (manual trigger)
+- [X] Backend: GET/PATCH /api/admin/crawl/schedule
+- [X] Backend: node-cron job for auto-crawl
+- [X] Frontend: DocumentsTable
+- [X] Frontend: Upload form (file picker)
+- [X] Frontend: Knowledge page
+- [X] Frontend: Crawl button + status display
+- [X] Frontend: Schedule settings
 
 ### Phase 9: Admin — Chats & Settings (2h)
 
-- [ ] Backend: GET /api/admin/conversations (paginated)
-- [ ] Backend: GET /api/admin/conversations/:id (with messages)
-- [ ] Backend: GET/PATCH /api/admin/settings
-- [ ] Backend: CRUD /api/admin/quick-replies
-- [ ] Frontend: ConversationsTable
-- [ ] Frontend: ConversationThread
-- [ ] Frontend: Chats list + detail pages
-- [ ] Frontend: Settings page (system prompt, toggles)
-- [ ] Frontend: Quick replies management
+- [X] Backend: GET /api/admin/conversations (paginated)
+- [X] Backend: GET /api/admin/conversations/:id (with messages)
+- [X] Backend: GET/PATCH /api/admin/settings
+- [X] Backend: CRUD /api/admin/quick-replies
+- [X] Frontend: ConversationsTable
+- [X] Frontend: ConversationThread
+- [X] Frontend: Chats list + detail pages
+- [X] Frontend: Settings page (system prompt, toggles)
+- [X] Frontend: Quick replies management
 
 ### Phase 10: Polish & Deploy (2-3h)
 

@@ -10,8 +10,11 @@ export class FunctionDefinitionsService {
         description: `General conversation response. Use for:
 - Answering questions about hotel, rooms, amenities, policies, location
 - Asking clarifying questions
+- Presenting availability results from check_availability to user (ALWAYS use respond after check_availability)
+- Presenting booking preview from create_reservation (PHASE 1) to user
 - Any response that is not checking availability or creating a reservation
-- Presenting availability results or booking preview to user`,
+
+IMPORTANT: After check_availability returns results, you MUST use respond() to show available rooms to user and ask them to choose a room and provide their name and email. DO NOT call create_reservation immediately after check_availability.`,
         parameters: {
           type: 'object',
           properties: {
@@ -54,14 +57,27 @@ Do NOT call if dates are vague - ask for clarification first using respond funct
         name: 'create_reservation',
         description: `Create a room reservation. TWO-PHASE process:
 
+IMPORTANT: You can ONLY call this function when you have ALL required information:
+- User has selected a specific room (roomSlug)
+- User has provided their full name (guestName)
+- User has provided their email address (guestEmail)
+- Dates are confirmed (checkIn, checkOut)
+- Number of guests is known (guestsCount)
+
+DO NOT call this function:
+- After check_availability - you MUST first use respond() to show available rooms and ask user to choose
+- Without guest name and email - you MUST ask for these details first using respond()
+- Without user explicitly selecting a room - you MUST ask which room they want
+
 PHASE 1 - Preview (confirm: false):
-- Call with all booking details + confirm: false
+- Call ONLY when you have ALL required data (roomSlug, guestName, guestEmail, checkIn, checkOut, guestsCount)
+- Call with confirm: false
 - System returns preview summary
-- You MUST show this preview to user and ask for confirmation
+- You MUST show this preview to user using respond() and ask for confirmation
 - Booking is NOT created yet
 
 PHASE 2 - Confirm (confirm: true):  
-- Call ONLY after user explicitly says yes/confirm/подтверждаю/да, бронируй
+- Call ONLY after user explicitly says yes/confirm/подтверждаю/да, бронируй/подтверждаю бронирование
 - Call with same details + confirm: true
 - System creates actual booking and returns result with "reservationId" field
 
@@ -102,7 +118,7 @@ NEVER skip Phase 1. NEVER call Phase 2 without explicit user confirmation.`,
           },
           required: ['roomSlug', 'checkIn', 'checkOut', 'guestName', 'guestEmail', 'guestsCount', 'confirm'],
         },
-      },
+      }
     ];
   }
 }

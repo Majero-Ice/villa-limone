@@ -8,6 +8,7 @@ import { IRoomRepository, ROOM_REPOSITORY } from '../../../room/domain/repositor
 import { IReservationRepository, RESERVATION_REPOSITORY } from '../../../reservation/domain/repositories/reservation.repository.interface';
 import { FunctionDefinitionsService } from '../services/function-definitions.service';
 import { SystemPromptService, ConversationContext } from '../services/system-prompt.service';
+import { RAGService } from '../services/rag.service';
 import { randomUUID } from 'crypto';
 import { Price } from '../../../room/domain/value-objects/price.vo';
 import { Reservation, ReservationStatus } from '../../../reservation/domain/entities/reservation.entity';
@@ -27,6 +28,7 @@ export class ProcessChatMessageUseCase {
     private readonly chatProvider: ChatProvider,
     private readonly functionDefinitions: FunctionDefinitionsService,
     private readonly systemPrompt: SystemPromptService,
+    private readonly ragService: RAGService,
   ) {}
 
   async execute(dto: ChatRequestDto): Promise<ChatResponseDto> {
@@ -50,8 +52,11 @@ export class ProcessChatMessageUseCase {
       content: dto.message,
     });
 
+    const knowledgeResults = await this.ragService.retrieveRelevantKnowledge(dto.message, 5, 0.7);
+    context.knowledgeContext = this.ragService.formatKnowledgeForPrompt(knowledgeResults);
+
     const functions = this.functionDefinitions.getFunctionDefinitions();
-    const systemPromptText = this.systemPrompt.buildSystemPrompt(context);
+    const systemPromptText = await this.systemPrompt.buildSystemPrompt(context);
 
     const messages = [
       { role: 'system', content: systemPromptText },
@@ -78,11 +83,23 @@ export class ProcessChatMessageUseCase {
       recentMessages: context.recentMessages.slice(-20),
     });
 
+    this.logger.log(`[processFunctionCall] Function result:`, {
+      hasMessage: !!result.message,
+      message: result.message,
+      needsRespond: result.needsRespond,
+      hasError: !!result.error,
+      error: result.error,
+      hasData: !!result.data,
+      data: result.data,
+      reservationId: result.reservationId,
+    });
+
     let finalMessage = result.message;
     let needsSecondCall = false;
 
     if (result.needsRespond && !result.message) {
       needsSecondCall = true;
+      this.logger.log(`[processFunctionCall] needsRespond=true but no message, will make second call`);
     }
 
     if (needsSecondCall && response.toolCallId) {
@@ -93,8 +110,10 @@ export class ProcessChatMessageUseCase {
         ...result.data,
       });
 
+      this.logger.log(`[processFunctionCall] Making second call with function result:`, functionResult);
+
       const secondMessages: any[] = [
-        { role: 'system', content: this.systemPrompt.buildSystemPrompt(context) },
+        { role: 'system', content: await this.systemPrompt.buildSystemPrompt(context) },
         ...this.formatMessagesForOpenAI(context.recentMessages.slice(-20)),
         {
           role: 'assistant',
@@ -119,11 +138,81 @@ export class ProcessChatMessageUseCase {
 
       const secondResponse = await this.chatProvider.chat(secondMessages, 'gpt-4o-mini', functions);
 
-      if (secondResponse.functionCall && secondResponse.functionCall.name === 'respond') {
-        const respondArgs = JSON.parse(secondResponse.functionCall.arguments);
-        finalMessage = respondArgs.message;
+      this.logger.log(`[processFunctionCall] Second response:`, {
+        hasFunctionCall: !!secondResponse.functionCall,
+        functionCallName: secondResponse.functionCall?.name,
+        hasContent: !!secondResponse.content,
+        content: secondResponse.content,
+      });
+
+      if (secondResponse.functionCall) {
+        if (secondResponse.functionCall.name === 'respond') {
+          const respondArgs = JSON.parse(secondResponse.functionCall.arguments);
+          finalMessage = respondArgs.message;
+          this.logger.log(`[processFunctionCall] Extracted message from respond function: ${finalMessage}`);
+        } else {
+          this.logger.log(`[processFunctionCall] Second response returned function ${secondResponse.functionCall.name}, processing it...`);
+          const secondResult = await this.processFunctionCall(secondResponse.functionCall, context, conversation.id);
+          
+          if (secondResult.message) {
+            finalMessage = secondResult.message;
+            this.logger.log(`[processFunctionCall] Got message from second function: ${finalMessage}`);
+          } else if (secondResult.needsRespond && !secondResult.message) {
+            this.logger.warn(`[processFunctionCall] Second function ${secondResponse.functionCall.name} needs respond but no message, making third call...`);
+            
+            if (secondResponse.toolCallId) {
+              const thirdFunctionResult = JSON.stringify({
+                success: !secondResult.error,
+                error: secondResult.error,
+                reservationId: secondResult.reservationId,
+                ...secondResult.data,
+              });
+
+              const thirdMessages: any[] = [
+                ...secondMessages,
+                {
+                  role: 'assistant',
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: secondResponse.toolCallId,
+                      type: 'function',
+                      function: {
+                        name: secondResponse.functionCall.name,
+                        arguments: secondResponse.functionCall.arguments,
+                      },
+                    },
+                  ],
+                },
+                {
+                  role: 'tool',
+                  tool_call_id: secondResponse.toolCallId,
+                  content: thirdFunctionResult,
+                } as any,
+              ];
+
+              const thirdResponse = await this.chatProvider.chat(thirdMessages, 'gpt-4o-mini', functions);
+              
+              if (thirdResponse.functionCall && thirdResponse.functionCall.name === 'respond') {
+                const respondArgs = JSON.parse(thirdResponse.functionCall.arguments);
+                finalMessage = respondArgs.message;
+                this.logger.log(`[processFunctionCall] Got message from third call respond: ${finalMessage}`);
+              } else if (thirdResponse.content) {
+                finalMessage = thirdResponse.content;
+                this.logger.log(`[processFunctionCall] Using third call direct content: ${finalMessage}`);
+              }
+            }
+          }
+          
+          if (secondResult.reservationId) {
+            result.reservationId = secondResult.reservationId;
+          }
+        }
       } else if (secondResponse.content) {
         finalMessage = secondResponse.content;
+        this.logger.log(`[processFunctionCall] Using direct content: ${finalMessage}`);
+      } else {
+        this.logger.warn(`[processFunctionCall] Second response has no function call or content!`);
       }
     }
 
@@ -212,7 +301,11 @@ export class ProcessChatMessageUseCase {
     context: ConversationContext,
     conversationId: string,
   ): Promise<{ message?: string; data?: any; error?: string; needsRespond?: boolean; reservationId?: string; metadata?: any }> {
+    this.logger.log(`[processFunctionCall] Processing function: ${functionCall.name}`);
+    this.logger.debug(`[processFunctionCall] Raw arguments: ${functionCall.arguments}`);
+    
     const args = JSON.parse(functionCall.arguments);
+    this.logger.log(`[processFunctionCall] Parsed arguments:`, args);
 
     switch (functionCall.name) {
       case 'respond':
@@ -222,6 +315,11 @@ export class ProcessChatMessageUseCase {
         return await this.handleCheckAvailability(args, context);
 
       case 'create_reservation':
+        // Normalize confirm parameter - OpenAI might send it as string "true"/"false"
+        if (typeof args.confirm === 'string') {
+          args.confirm = args.confirm === 'true' || args.confirm === '1';
+          this.logger.log(`[processFunctionCall] Normalized confirm from string to boolean: ${args.confirm}`);
+        }
         return await this.handleCreateReservation(args, context, conversationId);
 
       default:
@@ -311,6 +409,44 @@ export class ProcessChatMessageUseCase {
     context: ConversationContext,
     conversationId: string,
   ): Promise<{ data?: any; error?: string; needsRespond: boolean; reservationId?: string }> {
+    this.logger.log(`[create_reservation] Received function call with args:`, {
+      roomSlug: args.roomSlug,
+      checkIn: args.checkIn,
+      checkOut: args.checkOut,
+      guestName: args.guestName,
+      guestEmail: args.guestEmail,
+      guestsCount: args.guestsCount,
+      confirm: args.confirm,
+      confirmType: typeof args.confirm,
+    });
+
+    this.logger.log(`[create_reservation] Current booking state:`, {
+      step: context.bookingState.step,
+      previewShown: context.bookingState.previewShown,
+      selectedRoom: context.bookingState.selectedRoom,
+    });
+
+    // Validate all required fields are present
+    if (!args.roomSlug || !args.checkIn || !args.checkOut || !args.guestName || !args.guestEmail || args.guestsCount === undefined) {
+      const missingFields = [];
+      if (!args.roomSlug) missingFields.push('roomSlug');
+      if (!args.checkIn) missingFields.push('checkIn');
+      if (!args.checkOut) missingFields.push('checkOut');
+      if (!args.guestName) missingFields.push('guestName');
+      if (!args.guestEmail) missingFields.push('guestEmail');
+      if (args.guestsCount === undefined) missingFields.push('guestsCount');
+      
+      this.logger.warn(`[create_reservation] Missing required fields: ${missingFields.join(', ')}`);
+      return {
+        error: 'missing_required_fields',
+        data: {
+          missingFields,
+          message: `Cannot create reservation: missing ${missingFields.join(', ')}. Please ask user for this information first.`,
+        },
+        needsRespond: true,
+      };
+    }
+
     const room = context.availableRooms.find((r) => r.slug === args.roomSlug);
     if (!room) {
       return { 
@@ -352,7 +488,13 @@ export class ProcessChatMessageUseCase {
     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     const totalPrice = room.pricePerNight * nights;
 
+    this.logger.log(`[create_reservation] Calculated: nights=${nights}, totalPrice=${totalPrice}`);
+    this.logger.log(`[create_reservation] confirm value: ${args.confirm} (type: ${typeof args.confirm})`);
+
     if (!args.confirm) {
+      this.logger.log(`[create_reservation] PHASE 1: Generating preview (confirm=false)`);
+      this.logger.log(`[create_reservation] PHASE 1: NOT creating reservation in database - preview only`);
+      
       context.bookingState.step = 'awaiting_confirmation';
       context.bookingState.selectedRoom = args.roomSlug;
       context.bookingState.guestName = args.guestName;
@@ -360,26 +502,34 @@ export class ProcessChatMessageUseCase {
       context.bookingState.guests = args.guestsCount;
       context.bookingState.previewShown = true;
 
-      return {
-        data: {
-          preview: true,
-          room: {
-            name: room.name,
-            slug: room.slug,
-          },
-          checkIn: args.checkIn,
-          checkOut: args.checkOut,
-          nights,
-          guestsCount: args.guestsCount,
-          guestName: args.guestName,
-          guestEmail: args.guestEmail,
-          totalPrice,
+      const previewData = {
+        preview: true,
+        room: {
+          name: room.name,
+          slug: room.slug,
         },
+        checkIn: args.checkIn,
+        checkOut: args.checkOut,
+        nights,
+        guestsCount: args.guestsCount,
+        guestName: args.guestName,
+        guestEmail: args.guestEmail,
+        totalPrice,
+      };
+
+      this.logger.log(`[create_reservation] PHASE 1: Returning preview data:`, previewData);
+      this.logger.log(`[create_reservation] PHASE 1: No reservation created - this is correct behavior`);
+
+      return {
+        data: previewData,
         needsRespond: true,
       };
     }
 
+    this.logger.log(`[create_reservation] PHASE 2: Confirming reservation (confirm=true)`);
+
     if (!context.bookingState.previewShown) {
+      this.logger.warn(`[create_reservation] PHASE 2: Preview not shown! previewShown=${context.bookingState.previewShown}`);
       return { 
         error: 'preview_not_shown',
         data: { message: 'Preview must be shown before confirmation' },
@@ -388,6 +538,7 @@ export class ProcessChatMessageUseCase {
     }
 
     if (context.bookingState.step !== 'awaiting_confirmation') {
+      this.logger.warn(`[create_reservation] PHASE 2: Invalid state! step=${context.bookingState.step}, expected=awaiting_confirmation`);
       return { 
         error: 'invalid_state',
         data: { step: context.bookingState.step, message: 'Invalid booking state' },
@@ -396,8 +547,10 @@ export class ProcessChatMessageUseCase {
     }
 
     try {
+      this.logger.log(`[create_reservation] PHASE 2: Creating reservation in database...`);
       const roomEntity = await this.roomRepo.findBySlug(args.roomSlug);
       if (!roomEntity) {
+        this.logger.error(`[create_reservation] PHASE 2: Room not found: ${args.roomSlug}`);
         return { 
           error: 'room_not_found',
           data: { roomSlug: args.roomSlug },
@@ -420,24 +573,29 @@ export class ProcessChatMessageUseCase {
       });
 
       const created = await this.reservationRepo.create(reservation);
+      this.logger.log(`[create_reservation] PHASE 2: Reservation created successfully: ${created.id}`);
       context.bookingState.step = 'confirmed';
 
+      const resultData = {
+        success: true,
+        reservationId: created.id,
+        roomName: room.name,
+        checkIn: args.checkIn,
+        checkOut: args.checkOut,
+        totalPrice,
+        guestEmail: args.guestEmail,
+        nights,
+      };
+
+      this.logger.log(`[create_reservation] PHASE 2: Returning result data:`, resultData);
+
       return {
-        data: {
-          success: true,
-          reservationId: created.id,
-          roomName: room.name,
-          checkIn: args.checkIn,
-          checkOut: args.checkOut,
-          totalPrice,
-          guestEmail: args.guestEmail,
-          nights,
-        },
+        data: resultData,
         needsRespond: true,
         reservationId: created.id,
       };
     } catch (error) {
-      this.logger.error(`Error creating reservation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.error(`[create_reservation] PHASE 2: Error creating reservation: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined);
       return { 
         error: 'creation_failed',
         data: { errorMessage: error instanceof Error ? error.message : 'Unknown error' },

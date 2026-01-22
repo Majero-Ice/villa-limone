@@ -1,6 +1,13 @@
+export class ReservationRoomDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export class ReservationDto {
   id: string;
   roomId: string;
+  room?: ReservationRoomDto;
   guestName: string;
   guestEmail: string;
   checkIn: Date;
@@ -10,4 +17,6 @@ export class ReservationDto {
   status: string;
   specialRequests?: string;
   conversationId?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

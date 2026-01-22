@@ -18,7 +18,8 @@ model Document {
   name        String
   type        String // "pdf", "txt", "md", "crawl"
   sourceUrl   String?
-  content     String   @db.Text
+  storageUrl  String? // URL to file in Supabase Storage
+  content     String?  @db.Text // Optional, kept for backward compatibility
   contentHash String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

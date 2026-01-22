@@ -8,6 +8,8 @@ import { AmenityModule } from './modules/amenity/infrastructure/amenity.module';
 import { TestimonialModule } from './modules/testimonial/infrastructure/testimonial.module';
 import { ChatModule } from './modules/chat/infrastructure/chat.module';
 import { ReservationModule } from './modules/reservation/infrastructure/reservation.module';
+import { AdminModule } from './modules/admin/infrastructure/admin.module';
+import { KnowledgeBaseModule } from './modules/knowledge-base/infrastructure/knowledge-base.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { ReservationModule } from './modules/reservation/infrastructure/reservat
     TestimonialModule,
     ChatModule,
     ReservationModule,
+    AdminModule,
+    KnowledgeBaseModule,
   ],
   controllers: [AppController],
   providers: [],

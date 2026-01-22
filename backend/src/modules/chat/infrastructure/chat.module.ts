@@ -7,6 +7,7 @@ import { ChatController } from '../presentation/chat.controller';
 import { ProcessChatMessageUseCase } from '../application/use-cases/process-chat-message.use-case';
 import { EmbeddingsService } from '../application/services/embeddings.service';
 import { SemanticSearchService } from '../application/services/semantic-search.service';
+import { RAGService } from '../application/services/rag.service';
 import { FunctionDefinitionsService } from '../application/services/function-definitions.service';
 import { FunctionHandlerService } from '../application/services/function-handler.service';
 import { SystemPromptService } from '../application/services/system-prompt.service';
@@ -29,11 +30,12 @@ import { CONVERSATION_REPOSITORY } from '../domain/repositories/conversation.rep
     },
     EmbeddingsService,
     SemanticSearchService,
+    RAGService,
     FunctionDefinitionsService,
     FunctionHandlerService,
     SystemPromptService,
     ProcessChatMessageUseCase,
   ],
-  exports: [CHUNK_REPOSITORY, EmbeddingsService],
+  exports: [CHUNK_REPOSITORY, CONVERSATION_REPOSITORY, EmbeddingsService],
 })
 export class ChatModule {}

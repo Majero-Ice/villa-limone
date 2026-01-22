@@ -10,7 +10,7 @@ export function HeroSection() {
           backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=2080')",
         }}
       >
-        <div className="absolute inset-0 bg-graphite/40"></div>
+        <div className="absolute inset-0 bg-graphite/80"></div>
       </div>
 
       <div className="relative z-10 text-center text-ivory px-4">

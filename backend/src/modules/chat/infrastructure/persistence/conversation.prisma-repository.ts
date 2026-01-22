@@ -92,6 +92,32 @@ export class ConversationPrismaRepository implements IConversationRepository {
     return this.mapToConversationData(record);
   }
 
+  async findAll(page: number, limit: number, orderBy: string = 'createdAt', order: 'asc' | 'desc' = 'desc'): Promise<{ conversations: ConversationData[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const [records, total] = await Promise.all([
+      this.prisma.conversation.findMany({
+        skip,
+        take: limit,
+        orderBy: {
+          [orderBy]: order,
+        },
+        include: {
+          messages: {
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+          },
+        },
+      }),
+      this.prisma.conversation.count(),
+    ]);
+
+    return {
+      conversations: records.map((record) => this.mapToConversationData(record)),
+      total,
+    };
+  }
+
   private mapToConversationData(record: any): ConversationData {
     return {
       id: record.id,

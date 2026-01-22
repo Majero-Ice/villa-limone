@@ -41,7 +41,8 @@ export function Header() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-graphite hover:text-terracotta transition-colors duration-300"
+                className={` hover:text-terracotta transition-colors duration-300
+                  ${isScrolled ? 'text-graphite' : 'text-ivory/95'}`}
               >
                 {link.label}
               </a>

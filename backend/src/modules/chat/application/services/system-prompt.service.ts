@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
 
 export interface ConversationContext {
   conversationId: string;
@@ -29,24 +30,71 @@ export interface ConversationContext {
     content: string;
     timestamp: string;
   }>;
+  knowledgeContext?: string;
 }
 
 @Injectable()
 export class SystemPromptService {
-  buildSystemPrompt(context: ConversationContext): string {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async buildSystemPrompt(context: ConversationContext): Promise<string> {
+    const botSettings = await this.prisma.botSettings.findUnique({
+      where: { id: 'default' },
+    });
+
+    const template = botSettings?.systemPrompt || this.getDefaultPrompt();
+
+    let prompt = this.replaceVariables(template, context);
+
+    if (context.knowledgeContext) {
+      prompt = context.knowledgeContext + '\n\n' + prompt;
+    }
+
+    return prompt;
+  }
+
+  private replaceVariables(template: string, context: ConversationContext): string {
     const tomorrow = new Date(context.currentDate);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
+    const variables: Record<string, string> = {
+      'context.currentDate': context.currentDate,
+      'context.tomorrow': tomorrowStr,
+      'context.availableRooms': this.formatAvailableRooms(context.availableRooms),
+      'context.bookingState': JSON.stringify(context.bookingState, null, 2),
+    };
+
+    let result = template;
+
+    result = result.replace(/\$\{context\.currentDate\}/g, context.currentDate);
+    result = result.replace(/\$\{context\.tomorrow\}/g, tomorrowStr);
+    result = result.replace(/\$\{context\.availableRooms\}/g, this.formatAvailableRooms(context.availableRooms));
+    result = result.replace(/\$\{context\.bookingState\}/g, JSON.stringify(context.bookingState, null, 2));
+
+    return result;
+  }
+
+  private formatAvailableRooms(rooms: ConversationContext['availableRooms']): string {
+    return rooms.map(room => `
+${room.name} (slug: "${room.slug}")
+- ${room.description}
+- Price: €${room.pricePerNight}/night
+- Max guests: ${room.maxGuests}
+- Features: ${room.features.join(', ')}
+`).join('\n');
+  }
+
+  private getDefaultPrompt(): string {
     return `You are the AI concierge for Villa Limone, a boutique hotel on the Italian Ligurian coast. Be warm, helpful, and reflect Italian hospitality.
 
 ═══════════════════════════════════════════════════════════════
-CURRENT DATE: ${context.currentDate}
+CURRENT DATE: \${context.currentDate}
 ═══════════════════════════════════════════════════════════════
 
 Use this date to interpret relative dates:
-- "today" → ${context.currentDate}
-- "tomorrow" → ${tomorrowStr}
+- "today" → \${context.currentDate}
+- "tomorrow" → \${context.tomorrow}
 - "next weekend" → [calculate next Saturday from currentDate]
 - "in 2 weeks" → [calculate currentDate + 14 days]
 
@@ -56,43 +104,15 @@ Always convert to YYYY-MM-DD format before calling functions.
 AVAILABLE ROOMS (from database - this is the source of truth)
 ═══════════════════════════════════════════════════════════════
 
-${context.availableRooms.map(room => `
-${room.name} (slug: "${room.slug}")
-- ${room.description}
-- Price: €${room.pricePerNight}/night
-- Max guests: ${room.maxGuests}
-- Features: ${room.features.join(', ')}
-`).join('\n')}
+\${context.availableRooms}
 
 IMPORTANT: Only reference rooms listed above. Use exact slugs for create_reservation.
-
-═══════════════════════════════════════════════════════════════
-HOTEL POLICIES
-═══════════════════════════════════════════════════════════════
-
-- Check-in: 3:00 PM
-- Check-out: 11:00 AM  
-- Breakfast: 7:30 AM - 10:30 AM (included in room rate)
-- Parking: Free, on-site
-- Pets: Small pets welcome, €20/night supplement
-- Cancellation: Free up to 48 hours before arrival
-- Payment: Charged at check-out
-
-═══════════════════════════════════════════════════════════════
-LOCATION & NEARBY
-═══════════════════════════════════════════════════════════════
-
-- Cinque Terre: 20 min by car
-- Portofino: 15 min by car
-- Genoa (airport): 45 min by car
-- Private beach: 2 min walk
-- Train station: 10 min walk
 
 ═══════════════════════════════════════════════════════════════
 CURRENT BOOKING STATE
 ═══════════════════════════════════════════════════════════════
 
-${JSON.stringify(context.bookingState, null, 2)}
+\${context.bookingState}
 
 ═══════════════════════════════════════════════════════════════
 FUNCTION CALLING RULES (CRITICAL - MUST FOLLOW)
@@ -110,7 +130,7 @@ FUNCTION CALLING RULES (CRITICAL - MUST FOLLOW)
    Before calling, you need ALL of these:
    ✓ Availability was checked for these dates
    ✓ User selected a specific room
-   ✓ Guest full name
+   ✓ Guest full name 
    ✓ Guest email
    ✓ Number of guests
    

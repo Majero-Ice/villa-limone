@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
-import { IReservationRepository } from '../../domain/repositories/reservation.repository.interface';
+import { IReservationRepository, FindAllReservationsParams, FindAllReservationsResult } from '../../domain/repositories/reservation.repository.interface';
 import { Reservation } from '../../domain/entities/reservation.entity';
 import { ReservationPrismaMapper } from './reservation.prisma-mapper';
 import { Price } from '../../../room/domain/value-objects/price.vo';
@@ -41,6 +41,69 @@ export class ReservationPrismaRepository implements IReservationRepository {
     });
 
     return record ? ReservationPrismaMapper.toDomain(record) : null;
+  }
+
+  async findAll(params?: FindAllReservationsParams): Promise<FindAllReservationsResult> {
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const orderBy = params?.orderBy ?? 'createdAt';
+    const order = params?.order ?? 'desc';
+
+    const where: any = {};
+    if (params?.status) {
+      where.status = params.status;
+    }
+
+    const [reservations, total] = await Promise.all([
+      this.prisma.reservation.findMany({
+        where,
+        include: {
+          room: true,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          [orderBy]: order,
+        },
+      }),
+      this.prisma.reservation.count({ where }),
+    ]);
+
+    return {
+      reservations: reservations.map(ReservationPrismaMapper.toDomain),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async update(reservation: Reservation): Promise<Reservation> {
+    const record = await this.prisma.reservation.update({
+      where: { id: reservation.id },
+      data: {
+        status: reservation.status,
+        guestName: reservation.guestName,
+        guestEmail: reservation.guestEmail,
+        checkIn: reservation.checkIn,
+        checkOut: reservation.checkOut,
+        guestsCount: reservation.guestsCount,
+        totalPrice: reservation.totalPrice.inCents,
+        specialRequests: reservation.specialRequests,
+      },
+      include: {
+        room: true,
+      },
+    });
+
+    return ReservationPrismaMapper.toDomain(record);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.reservation.delete({
+      where: { id },
+    });
   }
 
   async findAvailableRooms(
