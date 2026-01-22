@@ -12,6 +12,7 @@ import { RAGService } from '../services/rag.service';
 import { randomUUID } from 'crypto';
 import { Price } from '../../../room/domain/value-objects/price.vo';
 import { Reservation, ReservationStatus } from '../../../reservation/domain/entities/reservation.entity';
+import { IBotSettingsRepository, BOT_SETTINGS_REPOSITORY } from '../../../admin/domain/repositories/bot-settings.repository.interface';
 
 @Injectable()
 export class ProcessChatMessageUseCase {
@@ -29,6 +30,8 @@ export class ProcessChatMessageUseCase {
     private readonly functionDefinitions: FunctionDefinitionsService,
     private readonly systemPrompt: SystemPromptService,
     private readonly ragService: RAGService,
+    @Inject(BOT_SETTINGS_REPOSITORY)
+    private readonly botSettingsRepo: IBotSettingsRepository,
   ) {}
 
   async execute(dto: ChatRequestDto): Promise<ChatResponseDto> {
@@ -55,8 +58,14 @@ export class ProcessChatMessageUseCase {
     const knowledgeResults = await this.ragService.retrieveRelevantKnowledge(dto.message, 5, 0.7);
     context.knowledgeContext = this.ragService.formatKnowledgeForPrompt(knowledgeResults);
 
-    const functions = this.functionDefinitions.getFunctionDefinitions();
-    const systemPromptText = await this.systemPrompt.buildSystemPrompt(context);
+    const botSettings = await this.botSettingsRepo.find();
+    const settings = {
+      enableBooking: botSettings?.enableBooking ?? true,
+      enableAvailability: botSettings?.enableAvailability ?? true,
+      enableRecommendations: botSettings?.enableRecommendations ?? true,
+    };
+    const functions = this.functionDefinitions.getFunctionDefinitions(settings);
+    const systemPromptText = await this.systemPrompt.buildSystemPrompt(context, settings);
 
     const messages = [
       { role: 'system', content: systemPromptText },
@@ -76,7 +85,7 @@ export class ProcessChatMessageUseCase {
       };
     }
 
-    const result = await this.processFunctionCall(response.functionCall, context, conversation.id);
+    const result = await this.processFunctionCall(response.functionCall, context, conversation.id, settings);
 
     await this.conversationRepo.updateContext(conversation.id, {
       bookingState: context.bookingState,
@@ -113,7 +122,7 @@ export class ProcessChatMessageUseCase {
       this.logger.log(`[processFunctionCall] Making second call with function result:`, functionResult);
 
       const secondMessages: any[] = [
-        { role: 'system', content: await this.systemPrompt.buildSystemPrompt(context) },
+        { role: 'system', content: await this.systemPrompt.buildSystemPrompt(context, settings) },
         ...this.formatMessagesForOpenAI(context.recentMessages.slice(-20)),
         {
           role: 'assistant',
@@ -152,7 +161,7 @@ export class ProcessChatMessageUseCase {
           this.logger.log(`[processFunctionCall] Extracted message from respond function: ${finalMessage}`);
         } else {
           this.logger.log(`[processFunctionCall] Second response returned function ${secondResponse.functionCall.name}, processing it...`);
-          const secondResult = await this.processFunctionCall(secondResponse.functionCall, context, conversation.id);
+          const secondResult = await this.processFunctionCall(secondResponse.functionCall, context, conversation.id, settings);
           
           if (secondResult.message) {
             finalMessage = secondResult.message;
@@ -300,6 +309,7 @@ export class ProcessChatMessageUseCase {
     functionCall: { name: string; arguments: string },
     context: ConversationContext,
     conversationId: string,
+    settings?: { enableBooking: boolean; enableAvailability: boolean; enableRecommendations: boolean },
   ): Promise<{ message?: string; data?: any; error?: string; needsRespond?: boolean; reservationId?: string; metadata?: any }> {
     this.logger.log(`[processFunctionCall] Processing function: ${functionCall.name}`);
     this.logger.debug(`[processFunctionCall] Raw arguments: ${functionCall.arguments}`);
@@ -312,9 +322,25 @@ export class ProcessChatMessageUseCase {
         return { message: args.message };
 
       case 'check_availability':
+        if (settings?.enableAvailability === false) {
+          this.logger.warn(`[processFunctionCall] check_availability called but is disabled`);
+          return {
+            error: 'feature_disabled',
+            data: { message: 'Availability checking is currently disabled. Please contact the hotel directly for availability inquiries.' },
+            needsRespond: true,
+          };
+        }
         return await this.handleCheckAvailability(args, context);
 
       case 'create_reservation':
+        if (settings?.enableBooking === false) {
+          this.logger.warn(`[processFunctionCall] create_reservation called but is disabled`);
+          return {
+            error: 'feature_disabled',
+            data: { message: 'Online booking is currently disabled. Please contact the hotel directly to make a reservation.' },
+            needsRespond: true,
+          };
+        }
         // Normalize confirm parameter - OpenAI might send it as string "true"/"false"
         if (typeof args.confirm === 'string') {
           args.confirm = args.confirm === 'true' || args.confirm === '1';

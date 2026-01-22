@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { FunctionDefinition } from '../../../../shared/infrastructure/ai/interfaces/ai-provider.interface';
 
+export interface BotSettings {
+  enableBooking: boolean;
+  enableAvailability: boolean;
+  enableRecommendations: boolean;
+}
+
 @Injectable()
 export class FunctionDefinitionsService {
-  getFunctionDefinitions(): FunctionDefinition[] {
-    return [
+  getFunctionDefinitions(settings?: BotSettings): FunctionDefinition[] {
+    const functions: FunctionDefinition[] = [
       {
         name: 'respond',
         description: `General conversation response. Use for:
@@ -13,8 +19,11 @@ export class FunctionDefinitionsService {
 - Presenting availability results from check_availability to user (ALWAYS use respond after check_availability)
 - Presenting booking preview from create_reservation (PHASE 1) to user
 - Any response that is not checking availability or creating a reservation
+- Informing users when features are unavailable (e.g., if online booking is disabled, politely explain and suggest contacting the hotel directly)
 
-IMPORTANT: After check_availability returns results, you MUST use respond() to show available rooms to user and ask them to choose a room and provide their name and email. DO NOT call create_reservation immediately after check_availability.`,
+IMPORTANT: 
+- After check_availability returns results, you MUST use respond() to show available rooms to user and ask them to choose a room and provide their name and email. DO NOT call create_reservation immediately after check_availability.
+- If a user asks to make a booking but online booking is disabled (you will see this in system prompt), use respond() to politely inform them that online booking is currently unavailable and suggest they contact the hotel directly.`,
         parameters: {
           type: 'object',
           properties: {
@@ -26,7 +35,10 @@ IMPORTANT: After check_availability returns results, you MUST use respond() to s
           required: ['message'],
         },
       },
-      {
+    ];
+
+    if (settings?.enableAvailability !== false) {
+      functions.push({
         name: 'check_availability',
         description: `Check room availability for specific dates. 
 Call this ONLY when:
@@ -52,8 +64,10 @@ Do NOT call if dates are vague - ask for clarification first using respond funct
           },
           required: ['checkIn', 'checkOut'],
         },
-      },
-      {
+      });
+    }
+    if (settings?.enableBooking !== false) {
+      functions.push({
         name: 'create_reservation',
         description: `Create a room reservation. TWO-PHASE process:
 
@@ -118,7 +132,9 @@ NEVER skip Phase 1. NEVER call Phase 2 without explicit user confirmation.`,
           },
           required: ['roomSlug', 'checkIn', 'checkOut', 'guestName', 'guestEmail', 'guestsCount', 'confirm'],
         },
-      }
-    ];
+      });
+    }
+
+    return functions;
   }
 }

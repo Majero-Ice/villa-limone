@@ -15,6 +15,8 @@ import { ChunkPrismaRepository } from './persistence/chunk.prisma-repository';
 import { ConversationPrismaRepository } from './persistence/conversation.prisma-repository';
 import { CHUNK_REPOSITORY } from '../domain/repositories/chunk.repository.interface';
 import { CONVERSATION_REPOSITORY } from '../domain/repositories/conversation.repository.interface';
+import { BotSettingsPrismaRepository } from '../../admin/infrastructure/persistence/bot-settings.prisma-repository';
+import { BOT_SETTINGS_REPOSITORY } from '../../admin/domain/repositories/bot-settings.repository.interface';
 
 @Module({
   imports: [PrismaModule, AiModule, ReservationModule, RoomModule],
@@ -27,6 +29,10 @@ import { CONVERSATION_REPOSITORY } from '../domain/repositories/conversation.rep
     {
       provide: CONVERSATION_REPOSITORY,
       useClass: ConversationPrismaRepository,
+    },
+    {
+      provide: BOT_SETTINGS_REPOSITORY,
+      useClass: BotSettingsPrismaRepository,
     },
     EmbeddingsService,
     SemanticSearchService,

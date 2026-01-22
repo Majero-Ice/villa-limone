@@ -37,14 +37,17 @@ export interface ConversationContext {
 export class SystemPromptService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async buildSystemPrompt(context: ConversationContext): Promise<string> {
+  async buildSystemPrompt(
+    context: ConversationContext,
+    settings?: { enableBooking: boolean; enableAvailability: boolean; enableRecommendations: boolean },
+  ): Promise<string> {
     const botSettings = await this.prisma.botSettings.findUnique({
       where: { id: 'default' },
     });
 
     const template = botSettings?.systemPrompt || this.getDefaultPrompt();
 
-    let prompt = this.replaceVariables(template, context);
+    let prompt = this.replaceVariables(template, context, settings);
 
     if (context.knowledgeContext) {
       prompt = context.knowledgeContext + '\n\n' + prompt;
@@ -53,17 +56,14 @@ export class SystemPromptService {
     return prompt;
   }
 
-  private replaceVariables(template: string, context: ConversationContext): string {
+  private replaceVariables(
+    template: string,
+    context: ConversationContext,
+    settings?: { enableBooking: boolean; enableAvailability: boolean; enableRecommendations: boolean },
+  ): string {
     const tomorrow = new Date(context.currentDate);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-    const variables: Record<string, string> = {
-      'context.currentDate': context.currentDate,
-      'context.tomorrow': tomorrowStr,
-      'context.availableRooms': this.formatAvailableRooms(context.availableRooms),
-      'context.bookingState': JSON.stringify(context.bookingState, null, 2),
-    };
 
     let result = template;
 
@@ -72,7 +72,54 @@ export class SystemPromptService {
     result = result.replace(/\$\{context\.availableRooms\}/g, this.formatAvailableRooms(context.availableRooms));
     result = result.replace(/\$\{context\.bookingState\}/g, JSON.stringify(context.bookingState, null, 2));
 
+    if (settings) {
+      const featuresSection = this.buildFeaturesAvailabilitySection(settings);
+      result = result + '\n\n' + featuresSection;
+    }
+
     return result;
+  }
+
+  private buildFeaturesAvailabilitySection(settings: { enableBooking: boolean; enableAvailability: boolean; enableRecommendations: boolean }): string {
+    const sections: string[] = [];
+
+    sections.push('═══════════════════════════════════════════════════════════════');
+    sections.push('FEATURE AVAILABILITY');
+    sections.push('═══════════════════════════════════════════════════════════════');
+
+    if (!settings.enableBooking) {
+      sections.push('');
+      sections.push('⚠️ ONLINE BOOKING IS CURRENTLY DISABLED');
+      sections.push('');
+      sections.push('If a user asks to make a reservation, book a room, or wants to complete a booking:');
+      sections.push('- Politely inform them that online booking is temporarily unavailable');
+      sections.push('- Suggest they contact the hotel directly via phone or email');
+      sections.push('- Be helpful and friendly, but clear that online booking is not available in language of user message');
+      sections.push('- Example response: "Mi dispiace, online booking is currently unavailable. Please contact us directly at [phone/email] to make a reservation. We would be happy to assist you!"');
+      sections.push('');
+    }
+
+    if (!settings.enableAvailability) {
+      sections.push('');
+      sections.push('⚠️ AVAILABILITY CHECKING IS CURRENTLY DISABLED');
+      sections.push('');
+      sections.push('If a user asks about room availability or wants to check dates:');
+      sections.push('- Politely inform them that availability checking is temporarily unavailable');
+      sections.push('- Suggest they contact the hotel directly for availability inquiries');
+      sections.push('- Example response: "Mi dispiace, I cannot check availability at the moment. Please contact us directly for availability information."');
+      sections.push('');
+    }
+
+    if (settings.enableBooking && settings.enableAvailability) {
+      sections.push('');
+      sections.push('✓ Online booking: Available');
+      sections.push('✓ Availability checking: Available');
+      sections.push('');
+    }
+
+    sections.push('═══════════════════════════════════════════════════════════════');
+
+    return sections.join('\n');
   }
 
   private formatAvailableRooms(rooms: ConversationContext['availableRooms']): string {
