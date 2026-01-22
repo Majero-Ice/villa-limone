@@ -10,4 +10,5 @@ export interface ChatResponseDto {
     name: string;
     arguments: string;
   };
+  reservationId?: string;
 }

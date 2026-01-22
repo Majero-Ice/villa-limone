@@ -88,12 +88,13 @@ export class OpenAIProvider implements EmbeddingsProvider, ChatProvider {
             if (!msg.content) {
               throw new Error('Function/Tool messages must have content');
             }
-            if (!msg.name) {
-              throw new Error('Function/Tool messages must have name (tool_call_id)');
+            const toolCallId = (msg as any).tool_call_id || msg.name;
+            if (!toolCallId) {
+              throw new Error('Function/Tool messages must have tool_call_id or name');
             }
             return {
               role: 'tool',
-              tool_call_id: msg.name,
+              tool_call_id: toolCallId,
               content: msg.content,
             } as OpenAI.Chat.Completions.ChatCompletionToolMessageParam;
           }
@@ -112,6 +113,13 @@ export class OpenAIProvider implements EmbeddingsProvider, ChatProvider {
             } as OpenAI.Chat.Completions.ChatCompletionUserMessageParam;
           }
           if (msg.role === 'assistant') {
+            if ((msg as any).tool_calls) {
+              return {
+                role: 'assistant',
+                content: null,
+                tool_calls: (msg as any).tool_calls,
+              } as OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam;
+            }
             if (msg.content === null) {
               return {
                 role: 'assistant',
