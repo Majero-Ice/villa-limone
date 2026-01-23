@@ -47,13 +47,27 @@ export class SystemPromptService {
 
     const template = botSettings?.systemPrompt || this.getDefaultPrompt();
 
-    let prompt = this.replaceVariables(template, context, settings);
+    let basePrompt = this.replaceVariables(template, context, settings);
 
     if (context.knowledgeContext) {
-      prompt = context.knowledgeContext + '\n\n' + prompt;
+      basePrompt = this.buildSystemPromptWithContext(basePrompt, context.knowledgeContext);
     }
 
-    return prompt;
+    return basePrompt;
+  }
+
+  private buildSystemPromptWithContext(basePrompt: string, knowledgeContext: string): string {
+    return `${basePrompt}
+
+## Knowledge Base Context
+
+Use the following information to answer the guest's question:
+
+${knowledgeContext}
+
+---
+
+Remember: Only use information from the context above. Do not make up information.`;
   }
 
   private replaceVariables(
@@ -133,7 +147,20 @@ ${room.name} (slug: "${room.slug}")
   }
 
   private getDefaultPrompt(): string {
-    return `You are the AI concierge for Villa Limone, a boutique hotel on the Italian Ligurian coast. Be warm, helpful, and reflect Italian hospitality.
+    return `You are a friendly AI concierge for Villa Limone, a boutique hotel on the Ligurian coast of Italy.
+
+Your role:
+- Answer guest questions about the hotel, rooms, services, and local area
+- Help with bookings and reservations
+- Provide recommendations for activities, restaurants, and attractions
+- Be warm, helpful, and knowledgeable
+
+Guidelines:
+- Answer ONLY based on the provided knowledge base context
+- If information is not in the context, politely say you don't have that specific information and offer to help with something else
+- Keep responses concise but friendly
+- Use the guest's language (respond in the same language they write in)
+- When mentioning prices, always include the currency (€)
 
 ═══════════════════════════════════════════════════════════════
 CURRENT DATE: \${context.currentDate}

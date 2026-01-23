@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
 import {
   IChunkRepository,
@@ -8,6 +8,8 @@ import {
 
 @Injectable()
 export class ChunkPrismaRepository implements IChunkRepository {
+  private readonly logger = new Logger(ChunkPrismaRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findSimilarByEmbedding(
@@ -16,34 +18,62 @@ export class ChunkPrismaRepository implements IChunkRepository {
   ): Promise<SimilaritySearchResult[]> {
     const { limit = 5, threshold = 0.3 } = options;
 
+    this.logger.debug(`[findSimilarByEmbedding] Searching with limit=${limit}, threshold=${threshold}`);
+    this.logger.debug(`[findSimilarByEmbedding] Embedding vector length: ${embedding.length}`);
+
     const embeddingStr = `[${embedding.join(',')}]`;
 
+    const startTime = Date.now();
+    
+    const searchLimit = Math.max(limit * 2, 10);
+    
     const results = await this.prisma.$queryRawUnsafe<Array<{
       id: string;
       document_id: string;
       content: string;
       metadata: any;
       similarity: number;
+      content_length: number;
     }>>(
       `
-      SELECT 
-        id,
-        "documentId" as document_id,
-        content,
-        metadata,
-        1 - (embedding <=> $1::vector) as similarity
-      FROM "Chunk"
-      WHERE embedding IS NOT NULL
-        AND 1 - (embedding <=> $1::vector) > $2
-      ORDER BY embedding <=> $1::vector
-      LIMIT $3
-      `,
-      embeddingStr,
-      threshold,
-      limit,
-    );
+  SELECT 
+    id,
+    "documentId" as document_id,
+    content,
+    metadata,
+    1 - (embedding <=> $1::vector) as similarity,
+    LENGTH(content) as content_length
+  FROM "Chunk"
+  WHERE embedding IS NOT NULL
+    AND LENGTH(content) > 50
+    -- AND 1 - (embedding <=> $1::vector) > $2  -- ЗАКОММЕНТИРУЙ ЭТО
+  ORDER BY embedding <=> $1::vector
+  LIMIT $2  -- было $3
+  `,
+  embeddingStr,
+  searchLimit,  // убрали threshold из параметров
+);
 
-    return results.map((row) => ({
+this.logger.log('RAW RESULTS:', results.map(r => ({
+  sim: r.similarity.toFixed(4),
+  preview: r.content.slice(0, 50)
+})));
+    const queryTime = Date.now() - startTime;
+    
+    const filteredResults = results
+      .filter((r) => r.content_length > 50)
+      .slice(0, limit);
+
+    this.logger.log(`[findSimilarByEmbedding] Query executed in ${queryTime}ms, found ${results.length} results (filtered to ${filteredResults.length})`);
+    
+    if (filteredResults.length > 0) {
+      this.logger.debug(`[findSimilarByEmbedding] Similarity scores: ${filteredResults.map(r => r.similarity.toFixed(4)).join(', ')}`);
+      this.logger.debug(`[findSimilarByEmbedding] Content lengths: ${filteredResults.map(r => r.content_length).join(', ')}`);
+    } else {
+      this.logger.warn(`[findSimilarByEmbedding] No results found with threshold ${threshold}. Total chunks in DB may be 0 or threshold too high.`);
+    }
+
+    return filteredResults.map((row) => ({
       chunk: {
         id: row.id,
         documentId: row.document_id,

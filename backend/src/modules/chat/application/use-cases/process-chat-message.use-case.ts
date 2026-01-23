@@ -55,8 +55,8 @@ export class ProcessChatMessageUseCase {
       content: dto.message,
     });
 
-    const knowledgeResults = await this.ragService.retrieveRelevantKnowledge(dto.message, 5, 0.7);
-    context.knowledgeContext = this.ragService.formatKnowledgeForPrompt(knowledgeResults);
+    const knowledgeContext = await this.getRelevantContext(dto.message);
+    context.knowledgeContext = knowledgeContext;
 
     const botSettings = await this.botSettingsRepo.find();
     const settings = {
@@ -296,6 +296,26 @@ export class ProcessChatMessageUseCase {
       bookingState,
       recentMessages,
     };
+  }
+
+  private async getRelevantContext(userMessage: string): Promise<string> {
+    this.logger.log(`[getRelevantContext] Retrieving context for message: "${userMessage.substring(0, 100)}${userMessage.length > 100 ? '...' : ''}"`);
+    
+    const chunks = await this.ragService.retrieveRelevantKnowledge(userMessage, {
+      limit: 5,
+      threshold: 0.5,
+    });
+
+    if (chunks.length === 0) {
+      this.logger.warn(`[getRelevantContext] No relevant chunks found for query`);
+      return '';
+    }
+
+    const formattedContext = this.ragService.formatKnowledgeForPrompt(chunks);
+    this.logger.debug(`[getRelevantContext] Formatted context length: ${formattedContext.length} characters`);
+    this.logger.debug(`[getRelevantContext] Context preview: ${formattedContext.substring(0, 200)}...`);
+    
+    return formattedContext;
   }
 
   private formatMessagesForOpenAI(messages: Array<{ role: string; content: string }>): Array<{ role: string; content: string }> {

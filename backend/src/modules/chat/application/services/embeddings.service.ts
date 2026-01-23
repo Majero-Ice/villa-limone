@@ -1,9 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { AI_PROVIDER } from '../../../../shared/infrastructure/ai/ai.constants';
 import { EmbeddingsProvider } from '../../../../shared/infrastructure/ai/interfaces/ai-provider.interface';
 
 @Injectable()
 export class EmbeddingsService {
+  private readonly logger = new Logger(EmbeddingsService.name);
+
   constructor(
     @Inject(AI_PROVIDER)
     private readonly aiProvider: EmbeddingsProvider,
@@ -14,7 +16,10 @@ export class EmbeddingsService {
       return [];
     }
 
-    return this.aiProvider.createEmbeddings(texts, model);
+    this.logger.debug(`[createEmbeddings] Generating ${texts.length} embeddings...`);
+    const embeddings = await this.aiProvider.createEmbeddings(texts, model);
+    
+    return embeddings;
   }
 
   async createEmbedding(text: string, model: string = 'text-embedding-3-small'): Promise<number[]> {

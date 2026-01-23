@@ -93,20 +93,26 @@ export class TriggerCrawlUseCase {
         document = savedDocument;
       }
 
-      const chunks = this.chunkingService.chunkText(content);
+      const chunkData = this.chunkingService.chunkText(content);
       
-      if (chunks.length > 0) {
-        const embeddings = await this.embeddingsService.createEmbeddings(chunks);
+      if (chunkData.length > 0) {
+        const contentOnly = chunkData.map(chunk => chunk.content);
+        const embeddings = await this.embeddingsService.createEmbeddings(contentOnly);
         
-        const chunkData = chunks.map((chunk, index) => ({
+        const chunks = chunkData.map((chunk, index) => ({
           documentId: document.id,
-          content: chunk,
+          content: chunk.content,
           embedding: embeddings[index],
-          metadata: { chunkIndex: index, sourceUrl: dto.sourceUrl },
+          metadata: {
+            chunkIndex: index,
+            sourceUrl: dto.sourceUrl,
+            contextBefore: chunk.contextBefore,
+            contextAfter: chunk.contextAfter,
+          },
         }));
 
-        await this.chunkRepository.insertMany(chunkData);
-        chunksCreated = chunks.length;
+        await this.chunkRepository.insertMany(chunks);
+        chunksCreated = chunkData.length;
       }
 
       await this.prisma.crawlLog.update({

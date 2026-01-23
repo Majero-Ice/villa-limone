@@ -16,25 +16,200 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-async function chunkText(text: string, maxChunkSize: number = 1000): Promise<string[]> {
-  const paragraphs = text.split('\n\n');
-  const chunks: string[] = [];
-  let currentChunk = '';
+interface ChunkData {
+  content: string;
+  contextBefore?: string;
+  contextAfter?: string;
+}
 
-  for (const paragraph of paragraphs) {
-    if (currentChunk.length + paragraph.length + 2 > maxChunkSize && currentChunk.length > 0) {
-      chunks.push(currentChunk.trim());
-      currentChunk = paragraph;
-    } else {
-      currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+async function chunkText(text: string, maxChunkSize: number = 1000, overlap: number = 150): Promise<ChunkData[]> {
+  const chunks: ChunkData[] = [];
+  
+  const normalizedText = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const sections = splitIntoSections(normalizedText);
+  
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i].trim();
+    const prevSection = i > 0 ? sections[i - 1].trim() : null;
+    const nextSection = i < sections.length - 1 ? sections[i + 1].trim() : null;
+    
+    if (section.length <= maxChunkSize) {
+      if (section.length >= 150) {
+        chunks.push({
+          content: section,
+          contextBefore: prevSection ? truncateContext(prevSection, 200) : undefined,
+          contextAfter: nextSection ? truncateContext(nextSection, 200) : undefined,
+        });
+      }
+      continue;
+    }
+
+    const sectionChunks = splitSectionIntoChunks(section, maxChunkSize, overlap);
+    for (let j = 0; j < sectionChunks.length; j++) {
+      const chunk = sectionChunks[j].trim();
+      if (chunk.length < 150) continue;
+      
+      const prevChunk = j > 0 ? sectionChunks[j - 1].trim() : null;
+      const nextChunk = j < sectionChunks.length - 1 ? sectionChunks[j + 1].trim() : null;
+      
+      chunks.push({
+        content: chunk,
+        contextBefore: prevChunk ? truncateContext(prevChunk, 200) : undefined,
+        contextAfter: nextChunk ? truncateContext(nextChunk, 200) : undefined,
+      });
     }
   }
 
-  if (currentChunk) {
-    chunks.push(currentChunk.trim());
+  return chunks;
+}
+
+function truncateContext(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  
+  const sentences = splitIntoSentences(text);
+  let snippet = '';
+  
+  for (const sentence of sentences) {
+    if (snippet.length + sentence.length + 1 > maxLength) {
+      break;
+    }
+    snippet += (snippet ? ' ' : '') + sentence;
+  }
+  
+  if (!snippet && sentences.length > 0) {
+    snippet = sentences[0].substring(0, maxLength);
+  }
+  
+  return snippet.trim();
+}
+
+function splitIntoSections(text: string): string[] {
+  const sections: string[] = [];
+  const sectionMarkers = [
+    /^#{1,3}\s+.+$/gm,
+    /^##\s+.+$/gm,
+    /^###\s+.+$/gm,
+  ];
+
+  let lastIndex = 0;
+  const matches: Array<{ index: number; text: string }> = [];
+
+  for (const marker of sectionMarkers) {
+    let match;
+    while ((match = marker.exec(text)) !== null) {
+      matches.push({ index: match.index, text: match[0] });
+    }
   }
 
-  return chunks.filter((chunk) => chunk.length > 50);
+  matches.sort((a, b) => a.index - b.index);
+
+  for (const match of matches) {
+    if (match.index > lastIndex) {
+      const section = text.substring(lastIndex, match.index).trim();
+      if (section.length > 0) {
+        sections.push(section);
+      }
+      lastIndex = match.index;
+    }
+  }
+
+  if (lastIndex < text.length) {
+    const section = text.substring(lastIndex).trim();
+    if (section.length > 0) {
+      sections.push(section);
+    }
+  }
+
+  return sections.length > 0 ? sections : [text];
+}
+
+function splitSectionIntoChunks(section: string, maxChunkSize: number, overlap: number): string[] {
+  const chunks: string[] = [];
+  
+  const paragraphs = section.split(/\n\n+/).filter(p => p.trim().length > 0);
+  let currentChunk = '';
+  
+  for (let i = 0; i < paragraphs.length; i++) {
+    const para = paragraphs[i].trim();
+    
+    if ((currentChunk + '\n\n' + para).length > maxChunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      
+      const overlapText = getOverlapText(currentChunk, overlap);
+      currentChunk = overlapText + '\n\n' + para;
+    } else {
+      currentChunk += (currentChunk ? '\n\n' : '') + para;
+    }
+  }
+  
+  if (currentChunk.trim().length > 0) {
+    chunks.push(currentChunk.trim());
+  }
+  
+  return chunks;
+}
+
+function getOverlapText(text: string, overlapSize: number): string {
+  if (text.length <= overlapSize) {
+    return text;
+  }
+  
+  const overlapText = text.slice(-overlapSize);
+  const lastParaIndex = overlapText.lastIndexOf('\n\n');
+  
+  if (lastParaIndex > overlapSize * 0.3) {
+    return overlapText.substring(lastParaIndex + 2).trim();
+  }
+  
+  const sentences = splitIntoSentences(overlapText);
+  return sentences.slice(-2).join(' ').trim();
+}
+
+function splitIntoSentences(text: string): string[] {
+  const sentenceEndings = /([.!?]+\s+|\.\n+)/g;
+  const sentences: string[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = sentenceEndings.exec(text)) !== null) {
+    const sentence = text.substring(lastIndex, match.index + match[0].length).trim();
+    if (sentence.length > 10) {
+      sentences.push(sentence);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    const sentence = text.substring(lastIndex).trim();
+    if (sentence.length > 10) {
+      sentences.push(sentence);
+    }
+  }
+
+  return sentences.length > 0 ? sentences : [text];
+}
+
+function getOverlapSentences(text: string, overlapSize: number): string {
+  if (text.length <= overlapSize) {
+    return text;
+  }
+
+  const overlapText = text.slice(-overlapSize);
+  const lastSentenceIndex = overlapText.lastIndexOf('.');
+  
+  if (lastSentenceIndex > overlapSize * 0.3) {
+    return overlapText.substring(lastSentenceIndex + 1).trim();
+  }
+
+  const words = overlapText.split(/\s+/);
+  return words.slice(-Math.floor(overlapSize / 10)).join(' ');
 }
 
 async function createEmbeddings(texts: string[]): Promise<number[][]> {
@@ -92,16 +267,28 @@ async function seedKnowledgeBase() {
     }
 
     console.log(`  - Chunking text...`);
-    const chunks = await chunkText(content);
-    console.log(`  - Created ${chunks.length} chunks`);
+    const chunkData = await chunkText(content);
+    console.log(`  - Created ${chunkData.length} chunks`);
 
-    console.log(`  - Generating embeddings...`);
-    const embeddings = await createEmbeddings(chunks);
+    console.log(`  - Generating embeddings (content only, no context)...`);
+    const contentOnly = chunkData.map(chunk => chunk.content);
+    const embeddings = await createEmbeddings(contentOnly);
 
     console.log(`  - Saving chunks to database...`);
 
-    for (let i = 0; i < chunks.length; i++) {
+    for (let i = 0; i < chunkData.length; i++) {
       const embeddingStr = `[${embeddings[i].join(',')}]`;
+      const metadata: any = {
+        chunkIndex: i,
+        fileName,
+      };
+      
+      if (chunkData[i].contextBefore) {
+        metadata.contextBefore = chunkData[i].contextBefore;
+      }
+      if (chunkData[i].contextAfter) {
+        metadata.contextAfter = chunkData[i].contextAfter;
+      }
 
       await prisma.$executeRawUnsafe(
         `
@@ -109,9 +296,9 @@ async function seedKnowledgeBase() {
         VALUES (gen_random_uuid(), $1, $2, $3::vector, $4, NOW())
         `,
         document.id,
-        chunks[i],
+        chunkData[i].content,
         embeddingStr,
-        JSON.stringify({ chunkIndex: i, fileName }),
+        JSON.stringify(metadata),
       );
     }
 

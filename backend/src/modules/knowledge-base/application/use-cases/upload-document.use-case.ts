@@ -66,24 +66,30 @@ export class UploadDocumentUseCase {
 
     const savedDocument = await this.documentRepository.create(document);
 
-    const chunks = this.chunkingService.chunkText(parsedContent);
+    const chunkData = this.chunkingService.chunkText(parsedContent);
     
-    if (chunks.length > 0) {
-      const embeddings = await this.embeddingsService.createEmbeddings(chunks);
+    if (chunkData.length > 0) {
+      const contentOnly = chunkData.map(chunk => chunk.content);
+      const embeddings = await this.embeddingsService.createEmbeddings(contentOnly);
       
-      const chunkData = chunks.map((chunk, index) => ({
+      const chunks = chunkData.map((chunk, index) => ({
         documentId: savedDocument.id,
-        content: chunk,
+        content: chunk.content,
         embedding: embeddings[index],
-        metadata: { chunkIndex: index, fileName: dto.name },
+        metadata: {
+          chunkIndex: index,
+          fileName: dto.name,
+          contextBefore: chunk.contextBefore,
+          contextAfter: chunk.contextAfter,
+        },
       }));
 
-      await this.chunkRepository.insertMany(chunkData);
+      await this.chunkRepository.insertMany(chunks);
     }
 
     return {
       id: savedDocument.id,
-      chunksCreated: chunks.length,
+      chunksCreated: chunkData.length,
     };
   }
 }
