@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './shared/infrastructure/prisma/prisma.module';
 import { AiModule } from './shared/infrastructure/ai/ai.module';
+import { HealthModule } from './shared/presentation/health.module';
 import { AppController } from './app.controller';
 import { RoomModule } from './modules/room/infrastructure/room.module';
 import { AmenityModule } from './modules/amenity/infrastructure/amenity.module';
@@ -18,6 +19,7 @@ import { KnowledgeBaseModule } from './modules/knowledge-base/infrastructure/kno
     }),
     PrismaModule,
     AiModule,
+    HealthModule,
     RoomModule,
     AmenityModule,
     TestimonialModule,

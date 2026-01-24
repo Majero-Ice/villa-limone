@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: villa-limone-backend
+    env: node
+    region: frankfurt
+    plan: starter
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+      sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        sync: false
+
+databases:
+  - name: villa-limone-db
+    databaseName: villa_limone
+    user: villa_limone_user
+    plan: starter
+    region: frankfurt
