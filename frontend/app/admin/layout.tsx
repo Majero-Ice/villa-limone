@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/widgets/admin';
 import { useAuthStore } from '@/features/admin-auth';
+import { ToastContainer } from '@/shared/ui';
 
 export default function AdminLayout({
   children,
@@ -66,6 +67,7 @@ export default function AdminLayout({
       <div className="flex-1 flex flex-col">
         {children}
       </div>
+      <ToastContainer />
     </div>
   );
 }

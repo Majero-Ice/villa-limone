@@ -7,8 +7,10 @@ import { TriggerCrawlForm } from '@/features/admin/trigger-crawl';
 import { CrawlScheduleForm } from '@/features/admin/crawl-schedule';
 import { documentApi, Document } from '@/entities/document';
 import { AdminHeader } from '@/widgets/admin';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 export default function KnowledgePage() {
+  const toast = useToastStore();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,9 @@ export default function KnowledgePage() {
       const data = await documentApi.getAll();
       setDocuments(data);
     } catch (err: any) {
-      setError('Failed to load documents');
+      const errorMessage = 'Failed to load documents';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -38,8 +42,9 @@ export default function KnowledgePage() {
     try {
       await documentApi.delete(id);
       await loadDocuments();
+      toast.success('Document deleted successfully');
     } catch (err: any) {
-      alert('Failed to delete document');
+      toast.error('Failed to delete document');
     }
   };
 

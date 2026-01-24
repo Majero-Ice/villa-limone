@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AdminHeader, ConversationsTable } from '@/widgets/admin';
 import { ConversationListResponse, conversationApi } from '@/entities/conversation';
 import { Button } from '@/shared/ui';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 export default function ChatsPage() {
   const [data, setData] = useState<ConversationListResponse | null>(null);
@@ -23,6 +24,7 @@ export default function ChatsPage() {
         setData(result);
       } catch (error) {
         console.error('Failed to load conversations:', error);
+        useToastStore.getState().error('Failed to load conversations');
       } finally {
         setIsLoading(false);
       }

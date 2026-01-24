@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Room } from '../model/types';
 import { Users } from 'lucide-react';
 
@@ -9,10 +10,12 @@ export function RoomCard({ room }: RoomCardProps) {
   return (
     <div className="card-elevated overflow-hidden group cursor-pointer">
       <div className="relative h-64 overflow-hidden">
-        <img
+        <Image
           src={room.imageUrl}
           alt={room.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
       </div>
       

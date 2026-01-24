@@ -143,6 +143,7 @@ ${room.name} (slug: "${room.slug}")
 - Price: €${room.pricePerNight}/night
 - Max guests: ${room.maxGuests}
 - Features: ${room.features.join(', ')}
+- Image: ${room.imageUrl}
 `).join('\n');
   }
 

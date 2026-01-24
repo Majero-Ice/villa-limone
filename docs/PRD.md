@@ -967,16 +967,12 @@ If unsure, offer to have front desk follow up.
 
 ### Phase 10: Polish & Deploy (2-3h)
 
-- [ ] Add loading states everywhere
-- [ ] Add error handling (toasts, error states)
-- [ ] Final responsive testing
-- [ ] Image optimization (next/image)
-- [ ] SEO meta tags
-- [ ] Lighthouse audit (target >80)
-- [ ] Deploy backend to Railway/Render
-- [ ] Deploy frontend to Vercel
-- [ ] Configure CORS, env vars
-- [ ] Test production flow
+- [X] Add loading states everywhere
+- [X] Add error handling (toasts, error states)
+- [X] Final responsive testing
+- [X] Image optimization (next/image)
+- [X] SEO meta tags
+- [X] Lighthouse audit (target >80)
 
 ---
 

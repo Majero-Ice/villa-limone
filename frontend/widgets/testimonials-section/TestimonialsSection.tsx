@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TestimonialCard, Testimonial, testimonialApi } from '@/entities/testimonial';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 function TestimonialCardSkeleton() {
   return (
@@ -31,11 +32,13 @@ export function TestimonialsSection() {
     const fetchTestimonials = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const data = await testimonialApi.getAll();
         setTestimonials(data);
       } catch (err) {
-        setError('Failed to load testimonials. Please try again later.');
-        console.error('Error fetching testimonials:', err);
+        const errorMessage = 'Failed to load testimonials. Please try again later.';
+        setError(errorMessage);
+        useToastStore.getState().error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +57,7 @@ export function TestimonialsSection() {
           </p>
         </div>
 
-        {error && (
+        {error && !isLoading && (
           <div className="text-center py-8">
             <p className="text-danger">{error}</p>
           </div>

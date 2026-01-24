@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { RoomCard, Room, roomApi } from '@/entities/room';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 function RoomCardSkeleton() {
   return (
@@ -29,11 +30,13 @@ export function RoomsSection() {
     const fetchRooms = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const data = await roomApi.getAll();
         setRooms(data);
       } catch (err) {
-        setError('Failed to load rooms. Please try again later.');
-        console.error('Error fetching rooms:', err);
+        const errorMessage = 'Failed to load rooms. Please try again later.';
+        setError(errorMessage);
+        useToastStore.getState().error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -53,7 +56,7 @@ export function RoomsSection() {
           </p>
         </div>
 
-        {error && (
+        {error && !isLoading && (
           <div className="text-center py-8">
             <p className="text-danger">{error}</p>
           </div>

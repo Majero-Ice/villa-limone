@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export function AboutSection() {
   return (
     <section id="about" className="section bg-sand">
@@ -25,11 +27,13 @@ export function AboutSection() {
             </div>
           </div>
 
-          <div className="relative h-96 md:h-full">
-            <img
+          <div className="relative h-96 md:h-[500px] rounded-xl overflow-hidden shadow-lifted">
+            <Image
               src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2080"
               alt="Villa Limone exterior"
-              className="w-full h-full object-cover rounded-xl shadow-lifted"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           </div>
         </div>

@@ -5,6 +5,7 @@ import { formatDate } from '@/shared/lib/formatDate';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useState } from 'react';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 interface DocumentsTableProps {
   documents: Document[];
@@ -13,19 +14,21 @@ interface DocumentsTableProps {
 }
 
 export function DocumentsTable({ documents, onDelete, isLoading }: DocumentsTableProps) {
+  const toast = useToastStore();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleDownload = async (doc: Document) => {
     if (!doc.storageUrl) {
-      alert('File not available for download');
+      toast.warning('File not available for download');
       return;
     }
 
     try {
       setDownloadingId(doc.id);
       await documentApi.download(doc.id, doc.name);
+      toast.success('File downloaded successfully');
     } catch (error) {
-      alert('Failed to download file');
+      toast.error('Failed to download file');
       console.error(error);
     } finally {
       setDownloadingId(null);

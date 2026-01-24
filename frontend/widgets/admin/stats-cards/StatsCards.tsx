@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { DashboardStats, reservationApi } from '@/entities/reservation';
 import { formatPrice } from '@/shared/lib/formatPrice';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 export function StatsCards() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -16,6 +17,7 @@ export function StatsCards() {
         setStats(data);
       } catch (error) {
         console.error('Failed to load dashboard stats:', error);
+        useToastStore.getState().error('Failed to load dashboard statistics');
       } finally {
         setIsLoading(false);
       }

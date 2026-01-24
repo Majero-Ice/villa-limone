@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AmenityCard, Amenity, amenityApi } from '@/entities/amenity';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 function AmenityCardSkeleton() {
   return (
@@ -26,11 +27,13 @@ export function AmenitiesSection() {
     const fetchAmenities = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const data = await amenityApi.getAll();
         setAmenities(data);
       } catch (err) {
-        setError('Failed to load amenities. Please try again later.');
-        console.error('Error fetching amenities:', err);
+        const errorMessage = 'Failed to load amenities. Please try again later.';
+        setError(errorMessage);
+        useToastStore.getState().error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -49,7 +52,7 @@ export function AmenitiesSection() {
           </p>
         </div>
 
-        {error && (
+        {error && !isLoading && (
           <div className="text-center py-8">
             <p className="text-danger">{error}</p>
           </div>

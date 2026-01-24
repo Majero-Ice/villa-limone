@@ -25,6 +25,8 @@ export default function ReservationsPage() {
         setData(result);
       } catch (error) {
         console.error('Failed to load reservations:', error);
+        const { useToastStore } = await import('@/shared/lib/toast.store');
+        useToastStore.getState().error('Failed to load reservations');
       } finally {
         setIsLoading(false);
       }

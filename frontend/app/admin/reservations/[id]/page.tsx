@@ -7,8 +7,10 @@ import { Reservation, ReservationStatus, reservationApi } from '@/entities/reser
 import { Button } from '@/shared/ui';
 import { formatDate, formatDateTime } from '@/shared/lib/formatDate';
 import { formatPrice } from '@/shared/lib/formatPrice';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 export default function ReservationDetailPage() {
+  const toast = useToastStore();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -23,6 +25,7 @@ export default function ReservationDetailPage() {
         setReservation(data);
       } catch (error) {
         console.error('Failed to load reservation:', error);
+        toast.error('Failed to load reservation');
       } finally {
         setIsLoading(false);
       }
@@ -31,7 +34,7 @@ export default function ReservationDetailPage() {
     if (id) {
       loadReservation();
     }
-  }, [id]);
+  }, [id, toast]);
 
   const handleStatusUpdate = async (status: ReservationStatus) => {
     if (!reservation) return;
@@ -40,10 +43,11 @@ export default function ReservationDetailPage() {
     try {
       const updated = await reservationApi.updateStatus(id, { status });
       setReservation(updated);
+      toast.success('Reservation status updated successfully');
     } catch (error: any) {
       console.error('Failed to update reservation status:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update reservation status';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsUpdating(false);
     }
@@ -58,10 +62,11 @@ export default function ReservationDetailPage() {
     setIsUpdating(true);
     try {
       await reservationApi.delete(id);
+      toast.success('Reservation deleted successfully');
       router.push('/admin/reservations');
     } catch (error) {
       console.error('Failed to delete reservation:', error);
-      alert('Failed to delete reservation');
+      toast.error('Failed to delete reservation');
     } finally {
       setIsUpdating(false);
     }

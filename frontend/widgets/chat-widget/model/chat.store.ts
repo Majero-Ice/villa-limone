@@ -97,6 +97,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('Error sending message:', error);
       
+      const { useToastStore } = await import('@/shared/lib/toast.store');
+      useToastStore.getState().error('Failed to send message. Please try again.');
+      
       const errorMessage: Message = {
         id: `msg_${Date.now()}_error`,
         conversationId: state.sessionId,

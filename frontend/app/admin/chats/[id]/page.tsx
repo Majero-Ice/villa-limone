@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { AdminHeader, ConversationThread } from '@/widgets/admin';
 import { ConversationDetail, conversationApi } from '@/entities/conversation';
 import { Button } from '@/shared/ui';
+import { useToastStore } from '@/shared/lib/toast.store';
 
 export default function ChatDetailPage() {
   const params = useParams();
@@ -20,6 +21,7 @@ export default function ChatDetailPage() {
         setConversation(data);
       } catch (error) {
         console.error('Failed to load conversation:', error);
+        useToastStore.getState().error('Failed to load conversation');
       } finally {
         setIsLoading(false);
       }
