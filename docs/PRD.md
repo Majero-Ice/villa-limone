@@ -813,34 +813,12 @@ model CrawlSchedule {
 - "Perfect location..." — Thomas K., ★★★★☆
 - "Homemade breakfast incredible..." — Sophie M., ★★★★★
 
-### Default System Prompt
-
-```
-You are the AI concierge for Villa Limone, a boutique hotel on the Ligurian coast.
-Be warm and helpful, reflecting Italian hospitality. Keep responses concise.
-
-You can:
-- Answer questions about hotel, rooms, amenities, policies
-- Check room availability (ask for dates and guests)
-- Help make reservations (collect: name, email, dates, room, guest count)
-- Recommend local restaurants and activities
-
-Hotel info:
-- Check-in: 3 PM, Check-out: 11 AM
-- Breakfast: 7:30-10:30 AM
-- Parking: Free, on-site
-- Pets: Small pets welcome, €20/night
-- Nearby: Cinque Terre (20 min), Portofino (15 min), Genoa (45 min)
-- Beach: Private, 2 min walk
-
-If unsure, offer to have front desk follow up.
-```
 
 ---
 
 ## Development Phases
 
-### Phase 0: Setup (2h)
+### Phase 0: Setup 
 
 - [X] Create monorepo structure (frontend/ + backend/)
 - [X] Frontend: Next.js + TypeScript + Tailwind + shadcn/ui
@@ -853,7 +831,7 @@ If unsure, offer to have front desk follow up.
 - [X] Setup environment variables both sides
 - [X] Test connection frontend → backend
 
-### Phase 1: Landing Page — Static (3-4h)
+### Phase 1: Landing Page — Static 
 
 - [X] Setup fonts (Playfair Display, Inter)
 - [X] Create layout (Header, Footer)
@@ -866,7 +844,7 @@ If unsure, offer to have front desk follow up.
 - [X] Smooth scroll navigation
 - [X] Mobile responsive
 
-### Phase 2: Landing Page — Dynamic (2h)
+### Phase 2: Landing Page — Dynamic 
 
 - [X] Backend: GET /api/rooms endpoint (use case, repo, controller)
 - [X] Backend: GET /api/amenities endpoint
@@ -877,7 +855,7 @@ If unsure, offer to have front desk follow up.
 - [X] Connect TestimonialsSection to real data
 - [X] Add loading skeletons
 
-### Phase 3: Chat UI (2-3h)
+### Phase 3: Chat UI 
 
 - [X] Build ChatWidget (floating button, terracotta)
 - [X] Build ChatWindow (400px, expandable)
@@ -889,7 +867,7 @@ If unsure, offer to have front desk follow up.
 - [X] Session ID generation + persistence
 - [X] Mobile responsive chat
 
-### Phase 4: AI Integration (2-3h)
+### Phase 4: AI Integration
 
 - [X] Prepare knowledge base content (markdown files)
 - [X] Backend: Document/Chunk models already exist
@@ -900,7 +878,7 @@ If unsure, offer to have front desk follow up.
 - [X] Test Q&A (hotel info, room details)
 - [X] Fine-tune system prompt
 
-### Phase 5: Availability & Booking (3h)
+### Phase 5: Availability & Booking 
 
 - [X] Backend: POST /api/rooms/availability (check dates)
 - [X] Backend: POST /api/reservations (create)
@@ -911,7 +889,7 @@ If unsure, offer to have front desk follow up.
 - [X] Update conversation.hasReservation flag
 - [X] Test full flow: ask → check → book
 
-### Phase 6: Admin — Auth & Layout (2h)
+### Phase 6: Admin — Auth & Layout 
 
 - [X] Backend: Admin model + seed default admin
 - [X] Backend: POST /api/admin/auth/login (JWT)
@@ -924,7 +902,7 @@ If unsure, offer to have front desk follow up.
 - [X] Frontend: auth.store.ts (token management)
 - [X] Route protection (redirect if not logged in)
 
-### Phase 7: Admin — Dashboard & Reservations (3h)
+### Phase 7: Admin — Dashboard & Reservations
 
 - [X] Backend: GET /api/admin/dashboard/stats
 - [X] Frontend: StatsCards component
@@ -939,7 +917,7 @@ If unsure, offer to have front desk follow up.
 - [X] Confirm/cancel actions
 - [X] Delete with confirmation modal
 
-### Phase 8: Admin — Knowledge Base (3h)
+### Phase 8: Admin — Knowledge Base 
 
 - [X] Backend: GET /api/admin/documents
 - [X] Backend: POST /api/admin/documents (upload + parse + chunk + embed)
@@ -953,7 +931,7 @@ If unsure, offer to have front desk follow up.
 - [X] Frontend: Crawl button + status display
 - [X] Frontend: Schedule settings
 
-### Phase 9: Admin — Chats & Settings (2h)
+### Phase 9: Admin — Chats & Settings 
 
 - [X] Backend: GET /api/admin/conversations (paginated)
 - [X] Backend: GET /api/admin/conversations/:id (with messages)
@@ -965,7 +943,7 @@ If unsure, offer to have front desk follow up.
 - [X] Frontend: Settings page (system prompt, toggles)
 - [X] Frontend: Quick replies management
 
-### Phase 10: Polish & Deploy (2-3h)
+### Phase 10: Polish & Deploy
 
 - [X] Add loading states everywhere
 - [X] Add error handling (toasts, error states)
@@ -973,41 +951,6 @@ If unsure, offer to have front desk follow up.
 - [X] Image optimization (next/image)
 - [X] SEO meta tags
 - [X] Lighthouse audit (target >80)
-
----
-
-## Acceptance Criteria
-
-### Landing
-
-- [ ] All sections render correctly
-- [ ] Mobile responsive
-- [ ] Smooth scroll works
-- [ ] Chat widget visible from any position
-
-### Chatbot
-
-- [ ] Opens/closes smoothly
-- [ ] AI answers hotel questions correctly
-- [ ] Availability check works
-- [ ] Full booking flow works
-- [ ] Session persists on page refresh
-
-### Admin
-
-- [ ] Login works
-- [ ] Dashboard stats accurate
-- [ ] Reservations CRUD works
-- [ ] Document upload/delete works
-- [ ] Crawl trigger works
-- [ ] Chat history viewable
-- [ ] Settings changes apply
-
-### Technical
-
-- [ ] Lighthouse >80
-- [ ] No console errors
-- [ ] Errors handled gracefully
 
 ---
 
