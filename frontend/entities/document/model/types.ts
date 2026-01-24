@@ -3,7 +3,8 @@ export interface Document {
   name: string;
   type: string;
   sourceUrl?: string;
-  content: string;
+  storageUrl?: string;
+  content?: string;
   contentHash?: string;
   createdAt: string;
   updatedAt: string;

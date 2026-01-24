@@ -50,10 +50,12 @@ export default function KnowledgePage() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <AdminHeader title="Knowledge Base" />
+      <AdminHeader />
       
       <main className="flex-1 p-8 bg-ivory">
         <div className="max-w-7xl mx-auto space-y-6">
+          <h1 className="text-3xl font-serif text-graphite mb-6">Knowledge Base</h1>
+          
           {error && (
             <div className="bg-danger/10 text-danger p-4 rounded-lg">{error}</div>
           )}
