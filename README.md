@@ -72,7 +72,7 @@ A modern landing page for a boutique Italian hotel featuring an AI-powered chatb
 <img src="docs/assets/screenshots/rooms.png" alt="Rooms Section" width="800" />
 
 ### AI Chatbot
-<img src="docs/assets/screenshots/chatbot.png" alt="AI Chatbot" width="800" />
+<img src="docs/assets/screenshots/chat.png" alt="AI Chatbot" width="800" />
 
 ### Amentities Section
 <img src="docs/assets/screenshots/amentities.png" alt="Amentities Section" width="800" />
@@ -81,19 +81,20 @@ A modern landing page for a boutique Italian hotel featuring an AI-powered chatb
 <img src="docs/assets/screenshots/location.png" alt="Location Section" width="800" />
 
 ### Admin Dashboard
-<img src="docs/assets/screenshots/admin-dashboard.png" alt="Admin Dashboard" width="800" />
+<img src="docs/assets/screenshots/admin-dashpoard.png" alt="Admin Dashboard" width="800" />
 
 ### Admin Reservations
 <img src="docs/assets/screenshots/admin-reservations.png" alt="Admin Reservations" width="800" />
 
-### Admin Reservations Details
-<img src="docs/assets/screenshots/admin-reservations-details.png" alt="Admin Reservations Details" width="800" />
+### Admin Reservation Details
+<img src="docs/assets/screenshots/admin-reservation-details.png" alt="Admin Reservation Details" width="800" />
 
 ### Knowledge Base Management
-<img src="docs/assets/screenshots/admin-knowledge.png" alt="Knowledge Base" width="800" />
+<img src="docs/assets/screenshots/admin-knowladge.png" alt="Knowledge Base" width="800" />
 
 ### Admin Chat List
 <img src="docs/assets/screenshots/admin-chat-list.png" alt="Admin Chat List" width="800" />
+
 ### Admin Chat
 <img src="docs/assets/screenshots/admin-chat.png" alt="Admin Chat" width="800" />
 
