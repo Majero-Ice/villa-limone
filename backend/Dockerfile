@@ -13,7 +13,7 @@ RUN npm run build
 
 FROM node:22-slim AS runner
 WORKDIR /app
-RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get update -y && apt-get install -y openssl curl
 
 COPY package*.json ./
 RUN npm ci --omit=dev
